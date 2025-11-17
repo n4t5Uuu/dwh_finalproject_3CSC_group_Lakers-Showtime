@@ -1,30 +1,23 @@
-# step_business_product_list_ingest.py
-
 import pandas as pd
 from pathlib import Path
 
-# ------------- CONFIG ------------- #
-# Change this if your CSV is in another folder
 INPUT_FILE = Path("product_list.csv")
 
-# Where to save ingested/cleaned outputs
-OUTPUT_DIR = Path("ingested")  # you can change this
+OUTPUT_DIR = Path("ingested")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_CSV = OUTPUT_DIR / "product_list_clean.csv"
 OUTPUT_PARQUET = OUTPUT_DIR / "product_list.parquet"
-# ------------- CONFIG ------------- #
 
 
 def load_product_list(path: Path) -> pd.DataFrame:
     """Load raw product list CSV and do minimal cleanup."""
     df = pd.read_csv(path)
 
-    # Drop the auto-generated index column if present
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
-    # Enforce basic types
+
     df["product_id"] = df["product_id"].astype(str)
     df["product_name"] = df["product_name"].astype(str)
     df["product_type"] = df["product_type"].astype(str)

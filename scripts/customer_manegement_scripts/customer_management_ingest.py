@@ -1,14 +1,10 @@
-# step_business_product_list_ingest.py
-
 import pandas as pd
 from pathlib import Path
 
-# ------------- CONFIG ------------- #
-# Change this if your CSV is in another folder
 INPUT_FILE = Path("product_list.csv")
 
-# Where to save ingested/cleaned outputs
-OUTPUT_DIR = Path("ingested")  # you can change this
+
+OUTPUT_DIR = Path("ingested")  
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_CSV = OUTPUT_DIR / "product_list_clean.csv"

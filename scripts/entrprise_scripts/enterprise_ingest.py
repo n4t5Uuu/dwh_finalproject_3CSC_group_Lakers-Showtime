@@ -1,10 +1,8 @@
-# step_enterprise_ingest.py
 
 import pandas as pd
 from pathlib import Path
 
-# ================== CONFIG ================== #
-RAW_DIR = Path(".")  # folder where your CSVs are located
+RAW_DIR = Path(".")  
 
 MERCHANT_FILE = RAW_DIR / "merchant_data.csv"
 STAFF_FILE = RAW_DIR / "staff_data.csv"
@@ -16,14 +14,12 @@ ORDER_FILES = [
 
 OUT_DIR = Path("ingested") / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-# ================== CONFIG ================== #
 
 
 def load_merchant_data(path: Path) -> pd.DataFrame:
     """Load and minimally clean merchant_data.csv"""
     df = pd.read_csv(path)
 
-    # Drop useless index column if present
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
@@ -35,7 +31,6 @@ def load_merchant_data(path: Path) -> pd.DataFrame:
     df["country"] = df["country"].astype(str)
     df["contact_number"] = df["contact_number"].astype(str)
 
-    # Parse creation_date as datetime
     df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
 
     return df
@@ -45,7 +40,6 @@ def load_staff_data(path: Path) -> pd.DataFrame:
     """Load and minimally clean staff_data.csv"""
     df = pd.read_csv(path)
 
-    # Drop useless index column if present
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
@@ -58,7 +52,6 @@ def load_staff_data(path: Path) -> pd.DataFrame:
     df["country"] = df["country"].astype(str)
     df["contact_number"] = df["contact_number"].astype(str)
 
-    # Parse creation_date as datetime
     df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
 
     return df
@@ -83,7 +76,6 @@ def load_orders_with_merchant_data(paths) -> pd.DataFrame:
 
     combined = pd.concat(frames, ignore_index=True)
 
-    # Drop exact duplicates, just in case
     combined = combined.drop_duplicates(subset=["order_id", "merchant_id", "staff_id"])
 
     return combined

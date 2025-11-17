@@ -5,15 +5,14 @@ from pathlib import Path
 
 import pandas as pd
 
-# ================== CONFIG ================== #
-RAW_DIR = Path(".")  # folder where your CSVs are located
+
+RAW_DIR = Path(".")  
 
 CAMPAIGN_FILE = RAW_DIR / "campaign_data.csv"
 TXN_CAMPAIGN_FILE = RAW_DIR / "transactional_campaign_data.csv"
 
 OUT_DIR = Path("ingested") / "marketing"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-# ================== CONFIG ================== #
 
 
 def parse_discount_value(s: str):
@@ -40,13 +39,10 @@ def load_campaign_data(path: Path) -> pd.DataFrame:
     """
     raw = pd.read_csv(path)
 
-    # There should be exactly one column with a header that contains tab-separated names
     single_col_name = raw.columns[0]
 
-    # Split each row on '\t' into 5 parts: [index, campaign_id, name, desc, discount]
     parts = raw[single_col_name].astype(str).str.split("\t", n=4, expand=True)
 
-    # Build clean dataframe
     df = pd.DataFrame(
         {
             "campaign_id": parts[1].astype(str),
@@ -56,7 +52,6 @@ def load_campaign_data(path: Path) -> pd.DataFrame:
         }
     )
 
-    # Numeric discount as percent (1, 5, 10, 20, etc.)
     df["discount_percent"] = df["discount_raw"].apply(parse_discount_value)
 
     return df
@@ -77,11 +72,9 @@ def load_transactional_campaign_data(path: Path) -> pd.DataFrame:
     """Load and minimally clean transactional_campaign_data.csv"""
     df = pd.read_csv(path)
 
-    # Drop useless index column if present
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
-    # Enforce basic types
     df["campaign_id"] = df["campaign_id"].astype(str)
     df["order_id"] = df["order_id"].astype(str)
 
@@ -94,9 +87,7 @@ def load_transactional_campaign_data(path: Path) -> pd.DataFrame:
         parse_estimated_arrival_days
     )
 
-    # Make column names warehouse-friendly (optional but nice)
     df = df.drop(columns=["estimated arrival"])
-    # availed already int 0/1, keep as-is
 
     return df
 
