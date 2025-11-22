@@ -1,0 +1,69 @@
+import argparse
+from time import time
+from pathlib import Path
+
+import pandas as pd
+from sqlalchemy import create_engine
+
+
+def main(params):
+    user = params.user
+    password = params.password
+    host = params.host
+    port = params.port
+    db = params.db
+    table_name = params.table_name
+    url = params.url          # path to CSV
+
+    # Postgres engine (adjust driver if needed)
+    engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
+
+    t_start_total = time()
+
+    # stream CSV in chunks like the parquet example
+    df_iter = pd.read_csv(url, chunksize=100000)
+
+    first_chunk = next(df_iter)
+    # create or replace table schema based on header
+    first_chunk.head(0).to_sql(
+        name=table_name,
+        con=engine,
+        if_exists="replace",
+        index=False,
+    )
+    # insert first chunk
+    first_chunk.to_sql(
+        name=table_name,
+        con=engine,
+        if_exists="append",
+        index=False,
+    )
+
+    for chunk in df_iter:
+        t_start = time()
+        chunk.to_sql(
+            name=table_name,
+            con=engine,
+            if_exists="append",
+            index=False,
+        )
+        t_end = time()
+        print(f"Inserted another chunk..., took {t_end - t_start:.3f} seconds")
+
+    t_end_total = time()
+    print(f"Finished ingest for {table_name}, total {t_end_total - t_start_total:.3f} seconds")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Ingest line_item CSV data to Postgres")
+
+    parser.add_argument("--user", required=True)
+    parser.add_argument("--password", required=True)
+    parser.add_argument("--host", required=True)
+    parser.add_argument("--port", required=True)
+    parser.add_argument("--db", required=True)
+    parser.add_argument("--table_name", required=True)
+    parser.add_argument("--url", required=True)   # CSV path, e.g. data_files/.../line_item_data_prices1.csv
+
+    args = parser.parse_args()
+    main(args)
