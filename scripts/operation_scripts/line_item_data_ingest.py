@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine
 
-
 def main(params):
     user = params.user
     password = params.password
@@ -15,23 +14,26 @@ def main(params):
     table_name = params.table_name
     url = params.url          # path to CSV
 
-    # Postgres engine (adjust driver if needed)
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
 
     t_start_total = time()
 
-    # stream CSV in chunks like the parquet example
+    # Save CSV as Parquet
+    parquet_path = str(Path(url).with_suffix('.parquet'))
+    df_full = pd.read_csv(url)
+    df_full.to_parquet(parquet_path, index=False)
+    print(f"Saved Parquet file to {parquet_path}")
+
+    # Chunked ingestion (unchanged)
     df_iter = pd.read_csv(url, chunksize=100000)
 
     first_chunk = next(df_iter)
-    # create or replace table schema based on header
     first_chunk.head(0).to_sql(
         name=table_name,
         con=engine,
         if_exists="replace",
         index=False,
     )
-    # insert first chunk
     first_chunk.to_sql(
         name=table_name,
         con=engine,
@@ -52,7 +54,6 @@ def main(params):
 
     t_end_total = time()
     print(f"Finished ingest for {table_name}, total {t_end_total - t_start_total:.3f} seconds")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest line_item CSV data to Postgres")

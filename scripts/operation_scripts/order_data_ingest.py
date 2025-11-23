@@ -1,10 +1,8 @@
 import argparse
 from time import time
 from pathlib import Path
-
 import pandas as pd
 from sqlalchemy import create_engine
-
 
 def main(params):
     user = params.user
@@ -19,6 +17,13 @@ def main(params):
 
     t_start_total = time()
 
+    # Save CSV as Parquet
+    parquet_path = str(Path(url).with_suffix('.parquet'))
+    df_full = pd.read_csv(url)
+    df_full.to_parquet(parquet_path, index=False)
+    print(f"Saved Parquet file to {parquet_path}")
+
+    # Chunked ingestion (unchanged)
     df_iter = pd.read_csv(url, chunksize=100000)
 
     first_chunk = next(df_iter)
@@ -49,7 +54,6 @@ def main(params):
     t_end_total = time()
     print(f"Finished ingest for {table_name}, total {t_end_total - t_start_total:.3f} seconds")
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest order_data CSV to Postgres")
 
@@ -59,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", required=True)
     parser.add_argument("--db", required=True)
     parser.add_argument("--table_name", required=True)
-    parser.add_argument("--url", required=True)   # CSV path, e.g. data_files/.../order_data_20200101-20200701.csv
+    parser.add_argument("--url", required=True)   # CSV path
 
     args = parser.parse_args()
     main(args)
