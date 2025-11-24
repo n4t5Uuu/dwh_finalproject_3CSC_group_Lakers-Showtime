@@ -1,0 +1,18 @@
+docker-compose down -v
+
+docker-compose up -d
+
+docker-compose exec postgres psql -U kestra -d kestra
+
+-- (Load each by order) 
+docker compose exec kestra python3 /ingested/load_date.py
+docker compose exec kestra python3 /ingested/load_user.py
+docker compose exec kestra python3 /ingested/load_merchant.py
+docker compose exec kestra python3 /ingested/load_staff.py
+docker compose exec kestra python3 /ingested/load_product.py
+docker compose exec kestra python3 /ingested/load_campaign.py
+docker compose exec kestra python3 /ingested/load_fact_table.py
+
+\dn
+
+\dt shopzada.*
