@@ -1,65 +1,84 @@
-volumes:
-  postgres-data:
-    driver: local
-  kestra-data:
-    driver: local
+version: "3.9"
 
 services:
   postgres:
-    image: postgres:17
-    restart: unless-stopped
+    image: postgres:13
     environment:
-      POSTGRES_DB: kestra
-      POSTGRES_USER: kestra
-      POSTGRES_PASSWORD: k3str4
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-
-  kestra:
-    image: kestra/kestra:latest
-    restart: unless-stopped
-    user: "root"
-    command: server standalone
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres-db-volume:/var/lib/postgresql/data
     ports:
-      - "8999:8080"              # Kestra UI -> http://localhost:8999
-    volumes:
-      - kestra-data:/app/storage
-      - /tmp/kestra-wd:/tmp/kestra-wd
-      - /var/run/docker.sock:/var/run/docker.sock   # needed for Docker runner
-      - ./data_files:/data_files        # all CSVs
-      - ./scripts:/scripts              # all Python ETL scripts
-      - ./sql:/sql                      # optional: SQL files
-      - ./workflows:/workflows          # optional: store flow YAMLs in git
+      - "5432:5432"
+
+  airflow-init:
+    build:
+      context: .
+    depends_on:
+      - postgres
     environment:
-      KESTRA_CONFIGURATION: |
-        datasources:
-          postgres:
-            url: jdbc:postgresql://postgres:5432/kestra
-            driverClassName: org.postgresql.Driver
-            username: kestra
-            password: k3str4
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
+    entrypoint: >
+      bash -c "
+      airflow db init &&
+      airflow users create \
+        --username admin \
+        --firstname Air \
+        --lastname Flow \
+        --role Admin \
+        --email admin@example.com \
+        --password admin
+      "
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data_files:/data_files
+      - ./scripts:/scripts
+      - ./sql:/sql
+      - ./workflows:/workflows
+      - ./clean_data:/clean_data
 
-        kestra:
-          repository:
-            type: postgres
-          queue:
-            type: postgres
-          storage:
-            type: local
-            local:
-              basePath: "/app/storage"
-          url: "http://localhost:8999/"
+  airflow-webserver:
+    build:
+      context: .
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
+    ports:
+      - "8999:8080"
+    command: webserver
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data_files:/data_files
+      - ./scripts:/scripts
+      - ./sql:/sql
+      - ./workflows:/workflows
+      - ./clean_data:/clean_data
 
-        plugins:
-          configurations:
-            - type: io.kestra.plugin.scripts.runner.docker.Docker
-              values:
-                volumeEnabled: true
+  airflow-scheduler:
+    build:
+      context: .
+    depends_on:
+      - airflow-webserver
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
+    command: scheduler
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data_files:/data_files
+      - ./scripts:/scripts
+      - ./sql:/sql
+      - ./workflows:/workflows
+      - ./clean_data:/clean_data
+
+volumes:
+  postgres-db-volume:
