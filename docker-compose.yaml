@@ -25,6 +25,7 @@ services:
 
   kestra:
     image: kestra/kestra:latest
+    container_name: dwh_finalproject_3csc_group_lakers-showtime
     restart: unless-stopped
     user: "root"
     command: server standalone
@@ -34,8 +35,7 @@ services:
     ports:
       - "8999:8080"        # Kestra UI -> http://localhost:8999
     volumes:
-      - kestra-data:/app/storage
-      - /tmp/kestra-wd:/tmp/kestra-wd
+      - ./workflows:/app/flows
     environment:
       KESTRA_CONFIGURATION: |
         datasources:

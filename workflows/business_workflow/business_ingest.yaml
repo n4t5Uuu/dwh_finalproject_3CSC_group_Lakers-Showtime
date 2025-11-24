@@ -1,0 +1,16 @@
+id: ingest_product_list
+namespace: workflows.business_worfklows
+description: "Cleans the product_list.csv"
+tasks: 
+  - id: ingesting_message
+    type: io.kestra.plugin.scripts.shell.Bash
+    commands:
+    - echo: "Ingesting Product List of Business Department"
+
+  - id: ingest_product_list
+    type: io.kestra.plugin.scripts.shell.Bash
+    image: python:3.10
+    beforeCommands: 
+    - pip install pandas
+    commands: 
+    - python /app/scripts/business_scripts/step_business_ingest.py
