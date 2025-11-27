@@ -2,9 +2,9 @@ import pandas as pd
 from pathlib import Path
 
 # ------------- CONFIG ------------- #
-INPUT_FILE = Path("product_list.csv")
+INPUT_FILE = Path("/data_files/Business Department/product_list.csv")
 
-OUTPUT_DIR = Path("ingested")
+OUTPUT_DIR = Path("/clean_data")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_CSV = OUTPUT_DIR / "product_list.csv"
