@@ -23,6 +23,14 @@ def main():
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
+    # Remove any leading/trailing spaces from column names
+    df.columns = df.columns.str.strip()
+
+    # Optional: lowercase all column names to avoid case mismatches
+    df.columns = df.columns.str.lower()
+
+    print("Columns after cleanup:", df.columns.tolist())
+
     print("Sample rows after raw load:")
     print(df.head())
 
