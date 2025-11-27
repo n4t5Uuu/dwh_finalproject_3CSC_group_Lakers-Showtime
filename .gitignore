@@ -6,3 +6,7 @@ __pycache__/
 # Airflow-specific logs and caches
 opt/airflow/logs/
 logs/
+
+# virtual environment for python
+venv/
+.venv/
