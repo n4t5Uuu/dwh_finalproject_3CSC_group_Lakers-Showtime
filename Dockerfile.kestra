@@ -1,9 +1,0 @@
-FROM kestra/kestra:latest
-
-USER root
-
-RUN apt update && \
-    apt install -y python3 python3-pip && \
-    pip install pandas psycopg2-binary
-
-USER kestra

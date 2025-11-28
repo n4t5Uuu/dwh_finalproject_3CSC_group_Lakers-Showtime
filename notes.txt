@@ -1,18 +1,18 @@
-docker-compose down -v
+Rebuild " docker-compose down "
+Run " docker-compose up -d "
+try username: admin, password: admin 
+if not work:
+    docker-compose exec airflow-webserver airflow users create --username admin --firstname Air --lastname Flow --role Admin --email admin@example.com --password admin
 
-docker-compose up -d
 
-docker-compose exec postgres psql -U kestra -d kestra
+-- check SQL
+docker exec -it final_proj-postgres-1 bash 
+psql -U airflow -d airflow
 
--- (Load each by order) 
-docker compose exec kestra python3 /ingested/load_date.py
-docker compose exec kestra python3 /ingested/load_user.py
-docker compose exec kestra python3 /ingested/load_merchant.py
-docker compose exec kestra python3 /ingested/load_staff.py
-docker compose exec kestra python3 /ingested/load_product.py
-docker compose exec kestra python3 /ingested/load_campaign.py
-docker compose exec kestra python3 /ingested/load_fact_table.py
-
-\dn
-
-\dt shopzada.*
+-- SQL to check table
+SELECT COUNT(*) FROM shopzada.dimDate;
+SELECT COUNT(*) FROM shopzada.dimCampaign;
+SELECT COUNT(*) FROM shopzada.dimMerchant;
+SELECT COUNT(*) FROM shopzada.dimStaff;
+SELECT COUNT(*) FROM shopzada.dimUser;
+SELECT COUNT(*) FROM shopzada.dimProduct;
