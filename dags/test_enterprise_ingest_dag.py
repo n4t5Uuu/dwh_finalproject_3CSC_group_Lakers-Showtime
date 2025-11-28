@@ -8,7 +8,7 @@ SCRIPTS_PATH = Path("/scripts/enterprise_scripts")  # path inside container
 if str(SCRIPTS_PATH) not in sys.path:
     sys.path.append(str(SCRIPTS_PATH))
 
-from step_enterprise_ingest import main as enterprise_ingest_main
+from enterprise_ingest import main as enterprise_ingest_main
 
 with DAG(
     dag_id="step_enterprise_ingest",
