@@ -8,7 +8,7 @@ if os.path.exists("/data_files/Marketing Department"):
 else:
     RAW_DIR = Path("./data_files/Marketing Department")
 
-CLEANED_DIR = Path("Cleaned Folder/Marketing Department")
+CLEANED_DIR = Path("/clean_data") / "marketing"
 CLEANED_DIR.mkdir(parents=True, exist_ok=True)
 
 def clean_campaign_data():

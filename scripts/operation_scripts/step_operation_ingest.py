@@ -4,7 +4,7 @@ from pathlib import Path
 # FIXED: Use absolute path for Docker volume mount
 RAW_DIR = Path("/data_files/Operations Department")
 
-CLEANED_DIR = Path("Cleaned Folder/Operations Department")
+CLEANED_DIR = Path("/clean_data") / "operations"
 CLEANED_DIR.mkdir(parents=True, exist_ok=True)
 
 OPERATION_FILES = [

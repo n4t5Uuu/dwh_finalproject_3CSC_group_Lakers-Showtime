@@ -4,7 +4,7 @@ from pathlib import Path
 # ------------- CONFIG ------------- #
 INPUT_FILE = Path("/data_files/Business Department/product_list.csv")
 
-OUTPUT_DIR = Path("/clean_data")
+OUTPUT_DIR = Path("/clean_data") / "business"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_CSV = OUTPUT_DIR / "product_list.csv"
@@ -22,6 +22,14 @@ def main():
     # Drop auto-generated index column if present
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
+
+    # Remove any leading/trailing spaces from column names
+    df.columns = df.columns.str.strip()
+
+    # Optional: lowercase all column names to avoid case mismatches
+    df.columns = df.columns.str.lower()
+
+    print("Columns after cleanup:", df.columns.tolist())
 
     print("Sample rows after raw load:")
     print(df.head())
