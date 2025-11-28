@@ -1,19 +1,19 @@
-# clean_merchant_names_and_contact.py
-
 import pandas as pd
 from pathlib import Path
 import re
 
 # ----- CONFIG ----- #
-SCRIPT_DIR = Path(__file__).resolve().parent 
 
-INPUT_FILE = SCRIPT_DIR / "merchant_data.csv"
-OUTPUT_FILE = SCRIPT_DIR / "merchant_data_clean.csv"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+INPUT_FILE = PROJECT_ROOT / "data_files" / "Enterprise Department" / "merchant_data.csv"
+OUTPUT_FILE = PROJECT_ROOT / "clean_data" / "enterprise" / "merchant_data_clean.csv"
+
+OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+
 # ------------------ #
 
-
 def normalize_phone(phone: str) -> str:
-    """Same rule as staff: make formatting consistent."""
+    """Normalize phone number similar to staff."""
     if pd.isna(phone):
         return ""
 
@@ -27,41 +27,39 @@ def normalize_phone(phone: str) -> str:
 
     return digits
 
-
 def clean_name(name: str) -> str:
     """
     Remove inconsistent outer quotation marks and extra spaces.
-
-    E.g.  '"Ontodia, Inc"' -> 'Ontodia, Inc'
-          '  "Whitby Group"  ' -> 'Whitby Group'
+    E.g. '"Ontodia, Inc"' -> 'Ontodia, Inc'
+         ' "Whitby Group" ' -> 'Whitby Group'
     """
     if pd.isna(name):
         return ""
 
     cleaned = str(name).strip()
-    cleaned = cleaned.strip('"').strip("'")  # remove outer quotes
-    cleaned = re.sub(r"\s+", " ", cleaned)   # collapse multiple spaces
-
+    cleaned = cleaned.strip('"').strip("'")       # remove outer quotes
+    cleaned = re.sub(r"\s+", " ", cleaned)        # collapse multiple spaces
     return cleaned
-
 
 def main():
     print(f"Reading: {INPUT_FILE}")
     df = pd.read_csv(INPUT_FILE)
 
+    # Force all merchant country values to United States
+    df["country"] = "United States"
+
     # Clean names
     df["name"] = df["name"].astype(str).apply(clean_name)
 
-    # Normalize contact numbers
+    # Normalize contact_number
     df["contact_number"] = df["contact_number"].astype(str)
     df["contact_number"] = df["contact_number"].apply(normalize_phone)
 
     print("Sample after cleaning:")
-    print(df[["merchant_id", "name", "contact_number"]].head())
+    print(df[["merchant_id", "name", "country", "contact_number"]].head())
 
     df.to_csv(OUTPUT_FILE, index=False)
-    print(f"\nSaved cleaned merchant_data (names + phones) to:\n  {OUTPUT_FILE}")
-
+    print(f"\nSaved cleaned merchant_data to:\n {OUTPUT_FILE}")
 
 if __name__ == "__main__":
     main()
