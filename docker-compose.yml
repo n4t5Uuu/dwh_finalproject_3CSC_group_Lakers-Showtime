@@ -12,6 +12,24 @@ services:
     ports:
       - "5432:5432"
 
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      # These are the credentials for the pgAdmin web UI login, NOT the DB
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      # Access pgAdmin web UI at http://localhost:5050
+      - "5050:80"
+    depends_on:
+      - postgres
+      # Connect postgres by using: 
+      # hostname: postgres
+      # port: 5432 
+      # database: airflow
+      # username: airflow
+      # password: airflow
+
   airflow-init:
     build:
       context: .
