@@ -1,7 +1,6 @@
+"""
 import pandas as pd
 import glob
-
-"""
 # -----------------------------
 # Parquet file locations (same as your DAG)
 # -----------------------------
@@ -83,7 +82,8 @@ print(df.describe(include='all'))
 # Optional: save to CSV for quick inspection
 df.to_csv("factlineitem_preview.csv", index=False)
 print("Saved preview CSV as factlineitem_preview.csv in the project folder")
-"""
+
+=====================================
 
 import pandas as pd
 
@@ -92,5 +92,5 @@ df = pd.read_csv("factlineitem_preview.csv")
 
 print(df.isna().sum())
 
-
+"""
 
