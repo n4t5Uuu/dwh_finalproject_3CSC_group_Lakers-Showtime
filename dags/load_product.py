@@ -40,7 +40,7 @@ def load_product_data():
     conn = pg_hook.get_conn()
     cursor = conn.cursor()
 
-    file_path = "/ingested/business/product_list.parquet"
+    file_path = "/clean_data/business/product_list.parquet"
     df = pd.read_parquet(file_path)
 
     # Prepare values for batch insert

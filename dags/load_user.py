@@ -50,9 +50,9 @@ def load_user_data():
     cursor = conn.cursor()
 
     # Load the three parquet files
-    df_user = pd.read_parquet("/ingested/customer/user_data.parquet")
-    df_card = pd.read_parquet("/ingested/customer/user_credit_card.parquet")
-    df_job = pd.read_csv("/ingested/customer/user_job_clean.csv")
+    df_user = pd.read_parquet("/clean_data/customer/user_data.parquet")
+    df_card = pd.read_parquet("/clean_data/customer/user_credit_card.parquet")
+    df_job = pd.read_csv("/clean_data/customer/user_job_clean.csv")
 
     # Merge on user_id
     df = df_user.merge(df_card[['user_id','credit_card_number','issuing_bank']], on='user_id', how='left')

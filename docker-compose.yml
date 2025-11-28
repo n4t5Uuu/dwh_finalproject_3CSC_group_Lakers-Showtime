@@ -12,6 +12,24 @@ services:
     ports:
       - "5432:5432"
 
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      # These are the credentials for the pgAdmin web UI login, NOT the DB
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      # Access pgAdmin web UI at http://localhost:5050
+      - "5050:80"
+    depends_on:
+      - postgres
+      # Connect postgres by using: 
+      # hostname: postgres
+      # port: 5432 
+      # database: airflow
+      # username: airflow
+      # password: airflow
+
   airflow-init:
     build:
       context: .
@@ -22,16 +40,9 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
     entrypoint: >
-      bash -c "
-      airflow db init &&
-      airflow users create \
-        --username admin \
-        --firstname Air \
-        --lastname Flow \
-        --role Admin \
-        --email admin@example.com \
-        --password admin
-      "
+      bash -c "airflow db init &&
+      airflow users create --username admin --firstname Air --lastname Flow --role Admin --email admin@example.com --password admin"
+
     volumes:
       - ./dags:/opt/airflow/dags
       - ./data_files:/data_files
@@ -39,7 +50,6 @@ services:
       - ./sql:/sql
       - ./workflows:/workflows
       - ./clean_data:/clean_data
-      - ./ingested:/ingested
 
   airflow-webserver:
     build:
@@ -61,7 +71,6 @@ services:
       - ./sql:/sql
       - ./workflows:/workflows
       - ./clean_data:/clean_data
-      - ./ingested:/ingested
 
   airflow-scheduler:
     build:
@@ -81,7 +90,6 @@ services:
       - ./sql:/sql
       - ./workflows:/workflows
       - ./clean_data:/clean_data
-      - ./ingested:/ingested
 
 volumes:
   postgres-db-volume:

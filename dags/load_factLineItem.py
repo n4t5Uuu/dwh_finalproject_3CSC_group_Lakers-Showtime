@@ -17,11 +17,11 @@ TABLE_NAME = "factlineitem"
 # -----------------------------
 # Parquet file locations
 # -----------------------------
-ORDER_DATA_FOLDER = "/ingested/operations/parq files/order_data*.parquet"
-LINE_ITEM_FOLDER = "/ingested/operations/parq files/line_item_data_prices*.parquet"
-ORDER_MERCHANT = "/ingested/enterprise/order_with_merchant_data_all.parquet"
-CAMPAIGN = "/ingested/marketing/transactional_campaign_data.parquet"
-DELAYS = "/ingested/operations/parq files/order_delays.parquet"
+ORDER_DATA_FOLDER = "/clean_data/operations/parq files/order_data*.parquet"
+LINE_ITEM_FOLDER = "/clean_data/operations/parq files/line_item_data_prices*.parquet"
+ORDER_MERCHANT = "/clean_data/enterprise/order_with_merchant_data_all.parquet"
+CAMPAIGN = "/clean_data/marketing/transactional_campaign_data.parquet"
+DELAYS = "/clean_data/operations/parq files/order_delays.parquet"
 
 
 def create_factlineitem_table():

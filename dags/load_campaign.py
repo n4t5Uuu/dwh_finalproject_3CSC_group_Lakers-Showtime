@@ -33,7 +33,7 @@ def load_campaign_data():
     conn = pg_hook.get_conn()
     cursor = conn.cursor()
 
-    campaign_file = "/ingested/marketing/campaign_data.parquet"
+    campaign_file = "/clean_data/marketing/campaign_data.parquet"
     df = pd.read_parquet(campaign_file)
 
     # Insert data

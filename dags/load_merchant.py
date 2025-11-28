@@ -46,7 +46,7 @@ def load_merchant_data():
     conn = pg_hook.get_conn()
     cursor = conn.cursor()
 
-    file_path = "/ingested/enterprise/merchant_data.parquet"
+    file_path = "/clean_data/enterprise/merchant_data.parquet"
     df = pd.read_parquet(file_path)
 
     # Convert creation_date to YYYYMMDD integer to match dimDate.date_key
