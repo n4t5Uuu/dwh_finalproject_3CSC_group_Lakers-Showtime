@@ -4,18 +4,16 @@ from datetime import datetime
 import sys
 from pathlib import Path
 
-# Add operation_scripts to sys.path for import
 SCRIPTS_PATH = Path("/scripts/operation_scripts")
 if str(SCRIPTS_PATH) not in sys.path:
     sys.path.append(str(SCRIPTS_PATH))
 
-# Import the main function from your cleaning script
-from step_operation_ingest import main as operation_ingest_main  # noqa: E402
+from operation_ingest import main as operation_ingest_main  # noqa: E402
 
 with DAG(
     dag_id="step_operation_ingest",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=None,  # manual run
+    schedule_interval=None,
     catchup=False,
     tags=["ingest", "operations"],
 ) as dag:

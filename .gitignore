@@ -6,3 +6,7 @@ __pycache__/
 # Airflow-specific logs and caches
 opt/airflow/logs/
 logs/
+
+#parquet files and cleaned csvs because too large
+*.parquet
+clean_data/**.csv
