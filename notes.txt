@@ -16,3 +16,13 @@ SELECT COUNT(*) FROM shopzada.dimMerchant;
 SELECT COUNT(*) FROM shopzada.dimStaff;
 SELECT COUNT(*) FROM shopzada.dimUser;
 SELECT COUNT(*) FROM shopzada.dimProduct;
+
+
+
+NOTES: (Cleaning - 11/28/25)
+*fixed dupes for customer management
+*fixed staff and merchant stuff 
+To-do next:
+*fix staff and merchant duplicates (add key)
+*fix cascading of records in operations scripts (isa lang dapat na order, and isa lang din dapat na line_item_data.)
+*ayusin yung bottle of paint na row doon sa Business/products.csv

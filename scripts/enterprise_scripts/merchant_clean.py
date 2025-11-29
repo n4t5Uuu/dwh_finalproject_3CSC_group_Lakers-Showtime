@@ -5,12 +5,15 @@ import re
 # ----- CONFIG ----- #
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-INPUT_FILE = PROJECT_ROOT / "data_files" / "Enterprise Department" / "merchant_data.csv"
-OUTPUT_FILE = PROJECT_ROOT / "clean_data" / "enterprise" / "merchant_data_clean.csv"
+INPUT_FILE = PROJECT_ROOT / "data_files" / \
+    "Enterprise Department" / "merchant_data.csv"
+OUTPUT_FILE = PROJECT_ROOT / "clean_data" / \
+    "enterprise" / "merchant_data_clean.csv"
 
 OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # ------------------ #
+
 
 def normalize_phone(phone: str) -> str:
     """Normalize phone number similar to staff."""
@@ -27,6 +30,7 @@ def normalize_phone(phone: str) -> str:
 
     return digits
 
+
 def clean_name(name: str) -> str:
     """
     Remove inconsistent outer quotation marks and extra spaces.
@@ -40,6 +44,7 @@ def clean_name(name: str) -> str:
     cleaned = cleaned.strip('"').strip("'")       # remove outer quotes
     cleaned = re.sub(r"\s+", " ", cleaned)        # collapse multiple spaces
     return cleaned
+
 
 def main():
     print(f"Reading: {INPUT_FILE}")
@@ -60,6 +65,7 @@ def main():
 
     df.to_csv(OUTPUT_FILE, index=False)
     print(f"\nSaved cleaned merchant_data to:\n {OUTPUT_FILE}")
+
 
 if __name__ == "__main__":
     main()

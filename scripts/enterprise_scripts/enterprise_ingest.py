@@ -20,6 +20,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ===== SHARED CLEANING HELPERS ===== #
 
+
 def normalize_phone(phone: str) -> str:
     """
     Normalize phone numbers to a consistent format.
@@ -42,6 +43,7 @@ def normalize_phone(phone: str) -> str:
 
     return digits
 
+
 def clean_merchant_name(name: str) -> str:
     """
     Remove inconsistent outer quotation marks and extra spaces.
@@ -57,6 +59,7 @@ def clean_merchant_name(name: str) -> str:
     return cleaned
 
 # ===== LOAD + CLEAN FUNCTIONS ===== #
+
 
 def load_merchant_data(path: Path) -> pd.DataFrame:
     """Load merchant_data.csv and apply name / phone / country cleaning."""
@@ -83,6 +86,7 @@ def load_merchant_data(path: Path) -> pd.DataFrame:
 
     return df
 
+
 def load_staff_data(path: Path) -> pd.DataFrame:
     """Load staff_data.csv and apply phone / country cleaning."""
     df = pd.read_csv(path)
@@ -108,6 +112,7 @@ def load_staff_data(path: Path) -> pd.DataFrame:
 
     return df
 
+
 def load_orders_with_merchant_data(paths) -> pd.DataFrame:
     """Load and combine order_with_merchant_data1/2/3.csv."""
     frames = []
@@ -126,11 +131,13 @@ def load_orders_with_merchant_data(paths) -> pd.DataFrame:
 
     combined = pd.concat(frames, ignore_index=True)
 
-    combined = combined.drop_duplicates(subset=["order_id", "merchant_id", "staff_id"])
+    combined = combined.drop_duplicates(
+        subset=["order_id", "merchant_id", "staff_id"])
 
     return combined
 
 # ===== SAVE ===== #
+
 
 def save_outputs(df: pd.DataFrame, name: str):
     """Save both CSV and Parquet with a consistent naming pattern."""
@@ -145,6 +152,7 @@ def save_outputs(df: pd.DataFrame, name: str):
     print(f"  Parquet: {parquet_path}\n")
 
 # ===== MAIN ===== #
+
 
 def main():
     print("=== Ingesting Enterprise department datasets ===\n")
@@ -171,6 +179,7 @@ def main():
     save_outputs(orders_merchant_staff, "order_with_merchant_data_all")
 
     print("Enterprise ingestion complete.")
+
 
 if __name__ == "__main__":
     main()

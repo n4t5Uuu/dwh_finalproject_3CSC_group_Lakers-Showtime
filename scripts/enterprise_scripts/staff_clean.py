@@ -5,12 +5,15 @@ import re
 # ----- CONFIG ----- #
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-INPUT_FILE = PROJECT_ROOT / "data_files" / "Enterprise Department" / "staff_data.csv"
-OUTPUT_FILE = PROJECT_ROOT / "clean_data" / "enterprise" / "staff_data_clean.csv"
+INPUT_FILE = PROJECT_ROOT / "data_files" / \
+    "Enterprise Department" / "staff_data.csv"
+OUTPUT_FILE = PROJECT_ROOT / "clean_data" / \
+    "enterprise" / "staff_data_clean.csv"
 
 OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # ------------------ #
+
 
 def normalize_phone(phone: str) -> str:
     """
@@ -34,6 +37,7 @@ def normalize_phone(phone: str) -> str:
 
     return digits
 
+
 def main():
     print(f"Reading: {INPUT_FILE}")
     df = pd.read_csv(INPUT_FILE)
@@ -50,6 +54,7 @@ def main():
 
     df.to_csv(OUTPUT_FILE, index=False)
     print(f"\nSaved cleaned staff_data to:\n {OUTPUT_FILE}")
+
 
 if __name__ == "__main__":
     main()
