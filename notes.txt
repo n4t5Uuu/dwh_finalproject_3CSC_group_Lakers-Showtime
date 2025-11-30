@@ -19,10 +19,37 @@ SELECT COUNT(*) FROM shopzada.dimProduct;
 
 
 
-NOTES: (Cleaning - 11/28/25)
+NOTES: (Cleaning - 11/30/25)
 *fixed dupes for customer management
 *fixed staff and merchant stuff 
-To-do next:
-*fix staff and merchant duplicates (add key)
-*fix cascading of records in operations scripts (isa lang dapat na order, and isa lang din dapat na line_item_data.)
-*ayusin yung bottle of paint na row doon sa Business/products.csv
+*fixed staff and merchant duplicates (add key)
+TO-DO NEXT:
+
+UNCLEAN DATA:
+> Business Department
+   - product_list (yung toolss)
+> Enterprise Department
+   - order_with_merchant (cascade with keys)
+> Marketing Department
+   - transactional_campaign_data.csv
+> Operations Department
+   - all order files (cascade with keys)
+
+FIX FOLDER STRUCTURE
+- if possible, lipat load and cleaning scripts sa scripts/ lang and not organize by departments
+
+LOAD DATA:
+- finish scripts for Staging Layer
+- finish scripts for Dimension Layer
+
+DASHBOARD
+- start the draft for DASHBOARD
+
+DOCUMENTATION:
+- Progress Report (12/1/25)
+- Docs/Compilation of assumptions and rules we set on cleaning the data.
+
+
+
+
+
