@@ -16,7 +16,7 @@ USER_DATA_FILE = RAW_DATA_DIR / "user_data.csv"
 
 # output cleaned CSV
 CLEAN_DATA_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT_FILE = CLEAN_DATA_DIR / "user_credit_card_clean.csv"
+OUTPUT_FILE = CLEAN_DATA_DIR / "user_credit_card.csv"
 # ---------------------------- #
 
 

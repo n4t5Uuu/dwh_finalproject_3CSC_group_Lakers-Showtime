@@ -8,6 +8,9 @@ SCRIPTS_PATH = Path("/scripts/customer_management_scripts")  # path inside conta
 if str(SCRIPTS_PATH) not in sys.path:
     sys.path.append(str(SCRIPTS_PATH))
 
+# Import scripts
+from user_credit_card_clean import main as credit_card_clean_main
+from user_job_clean import main as job_clean_main
 from step_customer_management_ingest import main as customer_management_ingest_main
 
 with DAG(
@@ -17,7 +20,24 @@ with DAG(
     catchup=False,
     tags=["ingest", "customermanagement"],
 ) as dag:
-    cleaning_task = PythonOperator(
+
+    # Task 1: Clean credit card data
+    credit_card_clean_task = PythonOperator(
+        task_id="clean_user_credit_cards",
+        python_callable=credit_card_clean_main,
+    )
+
+    # Task 2: Clean job data
+    job_clean_task = PythonOperator(
+        task_id="clean_user_job_data",
+        python_callable=job_clean_main,
+    )
+
+    # Task 3: Main ingest (depends on the cleaned files)
+    ingest_main_task = PythonOperator(
         task_id="run_customer_management_cleaning",
         python_callable=customer_management_ingest_main,
     )
+
+    # Dependencies: Task 1 & 2 → Task 3
+    [credit_card_clean_task, job_clean_task] >> ingest_main_task

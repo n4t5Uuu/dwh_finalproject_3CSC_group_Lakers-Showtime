@@ -12,7 +12,7 @@ INPUT_FILE = RAW_DATA_DIR / "user_job.csv"
 USER_DATA_FILE = RAW_DATA_DIR / "user_data.csv"
 
 CLEAN_DATA_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT_FILE = CLEAN_DATA_DIR / "user_job_clean.csv"
+OUTPUT_FILE = CLEAN_DATA_DIR / "user_job.csv"
 # ---------------------------- #
 
 

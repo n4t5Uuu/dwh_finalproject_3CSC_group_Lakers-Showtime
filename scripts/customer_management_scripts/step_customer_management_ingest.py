@@ -14,8 +14,8 @@ RAW_CM_DIR = PROJECT_ROOT / "data_files" / "Customer Management Department"
 CLEAN_CM_DIR = PROJECT_ROOT / "clean_data" / "customer_management"
 
 USER_DATA_FILE = RAW_CM_DIR / "user_data.csv"
-USER_JOB_FILE = CLEAN_CM_DIR / "user_job_clean.csv"
-USER_CC_FILE = CLEAN_CM_DIR / "user_credit_card_clean.csv"
+USER_JOB_FILE = CLEAN_CM_DIR / "user_job.csv"
+USER_CC_FILE = CLEAN_CM_DIR / "user_credit_card.csv"
 
 OUT_DIR = PROJECT_ROOT / "clean_data" / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
