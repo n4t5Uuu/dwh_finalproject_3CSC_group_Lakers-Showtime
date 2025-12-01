@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 # ================== CONFIG ================== #
+
 # Get Root:
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parents[1]
@@ -17,8 +18,8 @@ USER_CC_FILE = RAW_DIR / "user_credit_card.csv"
 # Outputs
 OUT_DIR = Path("clean_data") / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-# ================== CONFIG ================== #
 
+# ================== CONFIG ================== #
 
 # ---------- Helpers shared by all parts ---------- #
 
@@ -32,7 +33,7 @@ def split_clean_and_issues(df: pd.DataFrame, key_cols=None):
     Generic splitter.
 
     - Issues = duplicates based on key_cols (or full row if None)
-              OR any null/NaT in any column.
+      OR any null/NaT in any column.
     """
     if key_cols:
         duplicate_mask = df.duplicated(subset=key_cols, keep=False)
@@ -50,6 +51,7 @@ def split_clean_and_issues(df: pd.DataFrame, key_cols=None):
 
 def save_outputs(clean_df: pd.DataFrame, issues_df: pd.DataFrame, name: str):
     """Save clean and issues files (CSV + Parquet)."""
+
     csv_path = OUT_DIR / f"{name}.csv"
     parquet_path = OUT_DIR / f"{name}.parquet"
     issues_path = OUT_DIR / f"{name}_issues.csv"
@@ -64,11 +66,11 @@ def save_outputs(clean_df: pd.DataFrame, issues_df: pd.DataFrame, name: str):
     issues_df.to_csv(issues_path, index=False)
 
     print(f"Saved {name}:")
-    print(f"  Clean rows:  {len(clean_df):,}")
-    print(f"  Issue rows:  {len(issues_df):,}")
-    print(f"  CSV:         {csv_path}")
-    print(f"  Parquet:     {parquet_path}")
-    print(f"  Issues CSV:  {issues_path}\n")
+    print(f"  Clean rows: {len(clean_df):,}")
+    print(f"  Issue rows: {len(issues_df):,}")
+    print(f"  CSV: {csv_path}")
+    print(f"  Parquet: {parquet_path}")
+    print(f"  Issues CSV: {issues_path}\n")
 
 
 # ---------- USER DATA ---------- #
@@ -92,7 +94,7 @@ def load_user_data(path: Path) -> pd.DataFrame:
     df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
     df["birthdate"] = pd.to_datetime(df["birthdate"], errors="coerce")
 
-    # Force all countries to United States (per your latest version)
+    # Force all countries to United States
     df["country"] = "United States"
 
     return df
@@ -100,10 +102,16 @@ def load_user_data(path: Path) -> pd.DataFrame:
 
 def assign_user_ids_and_keys(user_data: pd.DataFrame):
     """
-    Renumber duplicate user_ids and create user_key, while
-    preserving the original row order of user_data.
-    """
+    Renumber duplicate user_ids and create user_key with prefix,
+    while preserving the original row order of user_data.
 
+    user_key pattern: <Prefix><digits>-<seq>
+    - Prefix:
+        U = regular user (default)
+        S = staff/employee
+        M = merchant
+    - digits and seq logic unchanged from original.
+    """
     df = user_data.copy()
 
     # Keep original user_id for mapping + original row order
@@ -116,8 +124,8 @@ def assign_user_ids_and_keys(user_data: pd.DataFrame):
 
         base_uid = group["user_id_orig"].iloc[0]
         digits = _digits_from_user_id(base_uid)
-
         group["seq"] = range(1, len(group) + 1)
+
         n = len(group)
 
         if n > 1:
@@ -127,14 +135,26 @@ def assign_user_ids_and_keys(user_data: pd.DataFrame):
             # Keep original user_id for non-dupe
             group["user_id"] = base_uid
 
-        # user_key always uses base digits and seq
-        group["user_key"] = [f"{digits}-{i}" for i in group["seq"]]
+        # Determine prefix from user_type for this group (default U)
+        if "user_type" in group.columns:
+            user_type_first = str(group["user_type"].iloc[0]).lower()
+        else:
+            user_type_first = "user"
+
+        if user_type_first in ("staff", "employee"):
+            prefix = "S"
+        elif user_type_first == "merchant":
+            prefix = "M"
+        else:
+            prefix = "U"
+
+        # user_key now includes prefix + digits + seq, e.g. U12941-1
+        group["user_key"] = [f"{prefix}{digits}-{i}" for i in group["seq"]]
 
         return group
 
     # groupby with sort=False so groups follow first appearance in the file
-    df = df.groupby("user_id_orig", sort=False,
-                    group_keys=False).apply(process_group)
+    df = df.groupby("user_id_orig", sort=False, group_keys=False).apply(process_group)
 
     # Build mapping from original IDs to user_key
     mapping = df[["user_id_orig", "name", "user_key"]].drop_duplicates()
@@ -144,8 +164,8 @@ def assign_user_ids_and_keys(user_data: pd.DataFrame):
 
     return df, mapping
 
-# ---------- USER JOB (combined cleaning + ingest) ---------- #
 
+# ---------- USER JOB (combined cleaning + ingest) ---------- #
 
 def load_and_clean_user_job(path: Path, mapping: pd.DataFrame) -> pd.DataFrame:
     """Load user_job.csv, apply Student fix, attach user_key from mapping."""
@@ -241,7 +261,7 @@ def main():
     print(user_data_raw.head(), "\n")
     print(user_data_raw.dtypes, "\n")
 
-    # Renumber duplicate user_ids and create user_key + mapping
+    # Renumber duplicate user_ids and create prefixed user_key + mapping
     user_data_fixed, user_key_mapping = assign_user_ids_and_keys(user_data_raw)
 
     # user_data: after renumbering, user_id should be unique; issues mostly null rows
@@ -253,7 +273,8 @@ def main():
     # ---------- user_job (clean + ingest) ---------- #
     print("Loading user_job.csv ...")
     user_job_with_keys = load_and_clean_user_job(
-        USER_JOB_FILE, user_key_mapping)
+        USER_JOB_FILE, user_key_mapping
+    )
     print(user_job_with_keys.head(), "\n")
     print(user_job_with_keys.dtypes, "\n")
 
@@ -266,7 +287,8 @@ def main():
     # ---------- user_credit_card (clean + ingest) ---------- #
     print("Loading user_credit_card.csv ...")
     user_cc_with_keys = load_and_clean_user_credit_card(
-        USER_CC_FILE, user_key_mapping)
+        USER_CC_FILE, user_key_mapping
+    )
     print(user_cc_with_keys.head(), "\n")
     print(user_cc_with_keys.dtypes, "\n")
 
