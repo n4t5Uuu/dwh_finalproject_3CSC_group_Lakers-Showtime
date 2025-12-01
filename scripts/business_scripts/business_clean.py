@@ -4,22 +4,16 @@ import pandas as pd
 from pathlib import Path
 import re
 
+
 # ================== CONFIG ================== #
-# Get Root:
-SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parents[1]
+INPUT_FILE = Path("/data_files/Business Department/product_list.csv")
 
-# Raw/Input Files:
-RAW_DIR = PROJECT_ROOT / "data_files" / "Business Department"
-INPUT_FILE = RAW_DIR / "product_list.csv"
+OUTPUT_DIR = Path("/clean_data") / "business"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Outputs:
-OUT_DIR = Path("clean_data") / "customer_management"
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-OUTPUT_CSV = OUT_DIR / "product_list.csv"
-OUTPUT_PARQUET = OUT_DIR / "product_list.parquet"
-BAD_ROWS_CSV = OUT_DIR / "product_list_issues.csv"
+OUTPUT_CSV = OUTPUT_DIR / "product_list.csv"
+OUTPUT_PARQUET = OUTPUT_DIR / "product_list.parquet"
+BAD_ROWS_CSV = OUTPUT_DIR / "product_list_issues.csv"
 # ================== CONFIG ================== #
 
 

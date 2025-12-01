@@ -15,7 +15,7 @@ RAW_DIR = PROJECT_ROOT / "data_files" / "Marketing Department"
 CAMPAIGN_FILE = RAW_DIR / "campaign_data.csv"
 TXN_CAMPAIGN_FILE = RAW_DIR / "transactional_campaign_data.csv"
 
-OUT_DIR = Path("clean_data") / "marketing"
+OUT_DIR = Path("/clean_data") / "marketing"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ================== CONFIG ================== #
 

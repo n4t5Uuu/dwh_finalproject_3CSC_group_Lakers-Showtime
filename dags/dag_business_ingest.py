@@ -10,17 +10,17 @@ SCRIPTS_PATH = Path("/scripts/business_scripts")
 if str(SCRIPTS_PATH) not in sys.path:
     sys.path.append(str(SCRIPTS_PATH))
 
-from business_clean import main as customer_management_ingest_main  # noqa: E402
+from business_clean import main as business_ingest_main  # noqa: E402
 
 with DAG(
-    dag_id="dag_customer_management_ingest",
+    dag_id="dag_business_ingest",
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,  # only run manually
     catchup=False,
-    tags=["ingest", "customer_management"],
+    tags=["ingest", "business"],
 ) as dag:
 
     run_business_ingest = PythonOperator(
-        task_id="customer_management_ingest",
-        python_callable=customer_management_ingest_main,
+        task_id="business_ingest",
+        python_callable=business_ingest_main,
     )

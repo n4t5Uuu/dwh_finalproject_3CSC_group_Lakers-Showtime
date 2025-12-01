@@ -16,7 +16,7 @@ USER_JOB_FILE = RAW_DIR / "user_job.csv"
 USER_CC_FILE = RAW_DIR / "user_credit_card.csv"
 
 # Outputs
-OUT_DIR = Path("clean_data") / "customer_management"
+OUT_DIR = Path("/clean_data") / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ================== CONFIG ================== #

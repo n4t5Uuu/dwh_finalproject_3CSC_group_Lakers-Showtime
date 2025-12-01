@@ -20,7 +20,7 @@ ORDER_FILES = [
 ]
 
 # Outputs
-OUT_DIR = Path("clean_data") / "enterprise"
+OUT_DIR = Path("/clean_data") / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ================== CONFIG ================== #
 

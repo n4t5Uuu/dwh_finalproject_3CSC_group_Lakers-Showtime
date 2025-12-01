@@ -7,7 +7,7 @@ PROJECT_ROOT = SCRIPT_DIR.parents[1]
 
 RAW_DIR = PROJECT_ROOT / "data_files" / "Operations Department"
 
-OUT_DIR = Path("clean_data") / "operations"
+OUT_DIR = Path("/clean_data") / "operations"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Order and line item raw slices
