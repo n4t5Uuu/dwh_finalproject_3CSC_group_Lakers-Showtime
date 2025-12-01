@@ -2,6 +2,7 @@
 
 import pandas as pd
 from pathlib import Path
+import re
 
 # ================== CONFIG ================== #
 # Get Root:
@@ -37,55 +38,53 @@ def assign_product_ids_and_keys(df: pd.DataFrame) -> pd.DataFrame:
       - preserve original row order
       - seq = 1..N
 
-    If N == 1 (non-dupe):
-        product_id stays the same
-        product_key = <digits>-1   (e.g., 10101-1)
+    product_id:
+        - NEVER modified; stays exactly as in the CSV.
 
-    If N > 1 (dupes):
-        product_id for each row = base_id + seq
-          e.g., PROD10101 -> PROD101011, PROD101012
-        product_key values = <digits>-1, <digits>-2, ...
-          e.g., 10101-1, 10101-2
+    product_key:
+        - keeps the prefix (e.g., PRODUCT)
+        - numeric part is zero-padded to 5 digits
+        - then '-<seq>' per row in the group
 
-    NOTE: product_id_orig is only used internally (not kept in output).
+    Examples:
+      product_id = 'PRODUCT16794' (1 row)
+        -> product_key: 'PRODUCT16794-1'
+
+      product_id = 'PRODUCT6794' (2 rows)
+        -> key base = 'PRODUCT06794'
+        -> product_key: 'PRODUCT06794-1', 'PRODUCT06794-2'
     """
     if "product_id" not in df.columns:
         return df
 
     df = df.copy()
-
-    # Internal original ID and row order
-    df["_product_id_orig"] = df["product_id"].astype(str)
+    df["product_id"] = df["product_id"].astype(str)
     df["_orig_index"] = df.index
 
     def process_group(group: pd.DataFrame) -> pd.DataFrame:
         group = group.sort_values("_orig_index").copy()
 
-        base_id = group["_product_id_orig"].iloc[0]
-        digits = _digits_from_id(base_id)
+        base_id = group["product_id"].iloc[0]  # e.g., PRODUCT16794
+
+        # Split into prefix + digits
+        m = re.match(r"^(\D*)(\d+)$", base_id)
+        if m:
+            prefix, digits = m.group(1), m.group(2)
+            digits_padded = digits.zfill(5)  # ensure 5 digits
+            key_base = prefix + digits_padded
+        else:
+            # if it doesn't match PREFIX+digits, just use whole ID
+            key_base = base_id
 
         group["seq"] = range(1, len(group) + 1)
-        n = len(group)
-
-        if n > 1:
-            # Renumber IDs for duplicates
-            group["product_id"] = [f"{base_id}{i}" for i in group["seq"]]
-        else:
-            # Keep original for non-dupe
-            group["product_id"] = base_id
-
-        # product_key based on digits + seq
-        group["product_key"] = [f"{digits}-{i}" for i in group["seq"]]
+        group["product_key"] = [f"{key_base}-{i}" for i in group["seq"]]
 
         return group
 
-    df = df.groupby("_product_id_orig", sort=False,
+    df = df.groupby("product_id", sort=False,
                     group_keys=False).apply(process_group)
 
-    # Restore original row order and drop helper columns
-    df = df.sort_values("_orig_index").drop(
-        columns=["seq", "_orig_index", "_product_id_orig"])
-
+    df = df.sort_values("_orig_index").drop(columns=["seq", "_orig_index"])
     return df
 
 
@@ -110,8 +109,9 @@ def main():
         "product_price" if "product_price" in df.columns else None
     )
 
-    # ---------- FIX KNOWN DATA ISSUE (bottle of paint) ---------- #
+    # ---------- FIX KNOWN DATA ISSUES ---------- #
     if name_col and type_col:
+        # 1) bottle of paint missing type
         mask_bottle_paint = (
             df[name_col].astype(str).str.contains(
                 "bottle of paint", case=False, na=False)
@@ -119,19 +119,28 @@ def main():
         )
         df.loc[mask_bottle_paint, type_col] = "stationary and school supplies"
 
-    print("Sample rows after raw load + bottle-of-paint fix:")
+        # 2) typo categories: toolss -> tools, cosmetic -> cosmetics
+        df[type_col] = df[type_col].astype(str)
+        df.loc[df[type_col] == "toolss", type_col] = "tools"
+        df.loc[df[type_col] == "cosmetic", type_col] = "cosmetics"
+
+    print("Sample rows after raw load + fixes:")
     print(df.head())
 
-    # ---------- ASSIGN PRODUCT IDS + KEYS (handles dupes) ---------- #
+    # ---------- ASSIGN PRODUCT KEYS (product_id unchanged) ---------- #
     if "product_id" in df.columns:
         df = assign_product_ids_and_keys(df)
 
     # ---------- FIND ISSUE ROWS ---------- #
-    # 1) Duplicates based on product_id (after renumbering)
-    if "product_id" in df.columns:
-        duplicate_mask = df.duplicated(subset=["product_id"], keep=False)
-    else:
-        duplicate_mask = df.duplicated(keep=False)
+    # NOTE: Duplicates are ALLOWED and should NOT be issues.
+    # We only flag:
+    #   - rows with missing values
+    #   - rows with invalid price values
+    # 1) (Optional) You can still compute duplicate_mask for debugging, but we won't use it:
+    # if "product_id" in df.columns:
+    #     duplicate_mask = df.duplicated(subset=["product_id"], keep=False)
+    # else:
+    #     duplicate_mask = df.duplicated(keep=False)
 
     # 2) Nulls in any column
     null_mask = df.isna().any(axis=1)
@@ -143,7 +152,8 @@ def main():
     else:
         invalid_price_mask = pd.Series(False, index=df.index)
 
-    bad_mask = duplicate_mask | null_mask | invalid_price_mask
+    # FINAL: Do NOT include duplicates in issues.
+    bad_mask = null_mask | invalid_price_mask
 
     bad_rows = df.loc[bad_mask].copy()
     clean_df = df.loc[~bad_mask].copy()

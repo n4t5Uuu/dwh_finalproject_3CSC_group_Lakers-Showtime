@@ -65,58 +65,66 @@ def clean_merchant_name(name: str) -> str:
     return cleaned
 
 
-def _digits_from_id(val) -> str:
-    """Extract just the digits from an ID, e.g. 'MERCHANT10101' -> '10101'."""
+def normalize_merchant_id(val: str) -> str:
+    """
+    Ensure merchant IDs have 5-digit numeric part, e.g.:
+
+      MERCHANT2347  -> MERCHANT02347
+      MERCHANT1931  -> MERCHANT01931
+      MERCHANT42692 -> MERCHANT42692 (unchanged)
+
+    Keeps whatever prefix exists (normally 'MERCHANT').
+    """
     if pd.isna(val):
         return ""
-    s = str(val)
-    digits = "".join(ch for ch in s if ch.isdigit())
-    return digits or s  # fallback to whole string if no digits
+
+    s = str(val).strip()
+    m = re.match(r"^(\D*)(\d+)$", s)
+    if not m:
+        # if it doesn't match PREFIX+digits, just return as-is
+        return s
+
+    prefix, digits = m.group(1), m.group(2)
+    digits = digits.zfill(5)  # pad to 5 digits
+    return prefix + digits
 
 
 def assign_ids_and_keys(df: pd.DataFrame, id_col: str, key_col: str) -> pd.DataFrame:
     """
-    Create a surrogate key per row based on the business ID, without changing the ID.
+    Create a surrogate key per row based on the business ID, WITHOUT changing the ID.
 
     For each group of the same id_col:
       - preserve original row order
       - seq = 1..N
 
-    Example:
+    Example (merchant):
       merchant_id = MERCHANT42692 appears twice
-      -> merchant_key: 42692-1, 42692-2
-      (merchant_id itself stays MERCHANT42692 for both rows)
+      -> merchant_key: MERCHANT42692-1, MERCHANT42692-2
+
+    Example (staff):
+      staff_id = STAFF010101 appears twice
+      -> staff_key: STAFF010101-1, STAFF010101-2
     """
     if id_col not in df.columns:
         return df
 
     df = df.copy()
-
-    # Remember original ID (for reference) and row order
-    orig_col = f"{id_col}_orig"
-    df[orig_col] = df[id_col].astype(str)
+    df[id_col] = df[id_col].astype(str)
     df["_orig_index"] = df.index
 
     def process_group(group: pd.DataFrame) -> pd.DataFrame:
-        # preserve original order within the group
         group = group.sort_values("_orig_index").copy()
 
-        base_id = group[id_col].iloc[0]
-        digits = _digits_from_id(base_id)
-
+        base_id = group[id_col].iloc[0]  # e.g., MERCHANT42692
         group["seq"] = range(1, len(group) + 1)
 
-        # merchant_key / staff_key based on digits + seq
-        group[key_col] = [f"{digits}-{i}" for i in group["seq"]]
-
+        # Key keeps prefix + ID, plus -1, -2, ...
+        group[key_col] = [f"{base_id}-{i}" for i in group["seq"]]
         return group
 
-    # groupby with sort=False so groups follow first appearance
     df = df.groupby(id_col, sort=False, group_keys=False).apply(process_group)
 
-    # Restore original row order and drop helper cols (keep *_orig)
     df = df.sort_values("_orig_index").drop(columns=["seq", "_orig_index"])
-
     return df
 
 
@@ -125,8 +133,6 @@ def split_clean_and_issues(df: pd.DataFrame, key_cols=None):
     Split into clean rows vs issue rows.
 
     - Issues = duplicates (by key_cols) OR any null/NaT
-    - Formatting problems (phones, merchant name quotes) are already fixed,
-      so they are NOT treated as issues.
     """
     if key_cols:
         duplicate_mask = df.duplicated(subset=key_cols, keep=False)
@@ -170,14 +176,15 @@ def save_outputs(clean_df: pd.DataFrame, issues_df: pd.DataFrame, name: str):
 # ---------- loaders with cleaning built-in ---------- #
 
 def load_merchant_data(path: Path) -> pd.DataFrame:
-    """Load raw merchant_data.csv and clean names + phone numbers."""
+    """Load raw merchant_data.csv and clean IDs, names, phone numbers."""
     df = pd.read_csv(path)
 
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
     if "merchant_id" in df.columns:
-        df["merchant_id"] = df["merchant_id"].astype(str)
+        df["merchant_id"] = df["merchant_id"].astype(
+            str).apply(normalize_merchant_id)
 
     if "name" in df.columns:
         df["name"] = df["name"].astype(str).apply(clean_merchant_name)
@@ -231,6 +238,43 @@ def load_orders_with_merchant_data(paths) -> pd.DataFrame:
     return combined
 
 
+def attach_keys_to_orders(
+    orders_df: pd.DataFrame,
+    merchant_df: pd.DataFrame,
+    staff_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Attach merchant_key and staff_key to orders, then drop raw IDs.
+
+    - Keep order_id.
+    - Use merchant_key / staff_key instead of merchant_id / staff_id.
+    """
+    df = orders_df.copy()
+
+    # Merchant mapping
+    if "merchant_id" in df.columns and "merchant_id" in merchant_df.columns:
+        merchant_map = (
+            merchant_df[["merchant_id", "merchant_key"]]
+            .drop_duplicates(subset=["merchant_id"])
+        )
+        df = df.merge(merchant_map, on="merchant_id", how="left")
+
+    # Staff mapping
+    if "staff_id" in df.columns and "staff_id" in staff_df.columns:
+        staff_map = (
+            staff_df[["staff_id", "staff_key"]]
+            .drop_duplicates(subset=["staff_id"])
+        )
+        df = df.merge(staff_map, on="staff_id", how="left")
+
+    # Drop the raw IDs; keep keys + order_id + other columns
+    for col in ["merchant_id", "staff_id"]:
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
+    return df
+
+
 # ---------- main pipeline ---------- #
 
 def main():
@@ -275,12 +319,20 @@ def main():
     # ---------- order_with_merchant_data1/2/3 ---------- #
     print("Loading order_with_merchant_data1/2/3.csv ...")
     orders_raw = load_orders_with_merchant_data(ORDER_FILES)
-    print(orders_raw.head(), "\n")
-    print(orders_raw.dtypes, "\n")
 
-    order_key_cols = ["order_id"] if "order_id" in orders_raw.columns else None
+    # Attach merchant_key + staff_key and drop merchant_id / staff_id
+    orders_with_keys = attach_keys_to_orders(
+        orders_raw, merchant_with_keys, staff_with_keys
+    )
+
+    print(orders_with_keys.head(), "\n")
+    print(orders_with_keys.dtypes, "\n")
+
+    # Issues based on order_id (keys are just attributes here)
+    order_key_cols = [
+        "order_id"] if "order_id" in orders_with_keys.columns else None
     orders_clean, orders_issues = split_clean_and_issues(
-        orders_raw, key_cols=order_key_cols
+        orders_with_keys, key_cols=order_key_cols
     )
     save_outputs(orders_clean, orders_issues, "order_with_merchant_data_all")
 

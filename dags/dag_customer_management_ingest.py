@@ -10,7 +10,7 @@ SCRIPTS_PATH = Path("/scripts/customer_management_scripts")
 if str(SCRIPTS_PATH) not in sys.path:
     sys.path.append(str(SCRIPTS_PATH))
 
-from business_clean import main as business_ingest_main  # noqa: E402
+from customer_management_clean import main as business_ingest_main  # noqa: E402
 
 with DAG(
     dag_id="business_ingest",
