@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 
-RAW_PATH = Path("raw_data/operations")
+RAW_PATH = Path("data_files/operations")
 CLEAN_PATH = Path("clean_data/operations")
 CLEAN_PATH.mkdir(parents=True, exist_ok=True)
 

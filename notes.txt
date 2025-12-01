@@ -29,6 +29,7 @@ UNCLEAN DATA:
 > FOR ALL:
    - keys must have some letters signifying if user sila, staff, or merchant. (e.g. S12941-1). 
    - dapat 5 digits lahat (or pwede rin for scalability gawing 6 digits. e.g. S012941-1). If may babaguhin check again for duplicates that may occur
+   - locations will not be USA anymore, base on number phone number to get state(?) then use lookup table.
 > Business Department
    - product_list (yung toolss)
 > Enterprise Department
@@ -37,6 +38,7 @@ UNCLEAN DATA:
 > Marketing Department
    - transactional_campaign_data.csv
 > Operations Department
+   - to analyze pa
    - all order files (cascade with keys)
    - create new user if wala kwenta yung transaction date sa orders.
 
@@ -46,6 +48,9 @@ FIX FOLDER STRUCTURE
 LOAD DATA:
 - finish scripts for Staging Layer
 - finish scripts for Dimension Layer
+
+FOR AIRFLOW:
+- better ata if one run/trigger lang yung CLEAN/LOAD(INGEST)(???)
 
 DASHBOARD
 - start the draft for DASHBOARD
