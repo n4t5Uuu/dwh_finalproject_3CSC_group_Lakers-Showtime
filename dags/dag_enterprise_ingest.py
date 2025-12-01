@@ -11,7 +11,7 @@ if str(SCRIPTS_PATH) not in sys.path:
 from enterprise_clean import main as enterprise_ingest_main
 
 with DAG(
-    dag_id="enterprise_ingest",
+    dag_id="dag_enterprise_ingest",
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,  # manual trigger
     catchup=False,

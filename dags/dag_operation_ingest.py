@@ -13,7 +13,7 @@ if str(SCRIPTS_PATH) not in sys.path:
 from operation_clean import main as operation_ingest_main  # noqa: E402
 
 with DAG(
-    dag_id="operation_ingest",
+    dag_id="dag_operation_ingest",
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,  # manual run
     catchup=False,

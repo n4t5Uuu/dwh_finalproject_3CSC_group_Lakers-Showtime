@@ -14,7 +14,7 @@ RAW_DIR = PROJECT_ROOT / "data_files" / "Business Department"
 INPUT_FILE = RAW_DIR / "product_list.csv"
 
 # Outputs:
-OUT_DIR = PROJECT_ROOT / "clean_data" / "business"
+OUT_DIR = Path("clean_data") / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_CSV = OUT_DIR / "product_list.csv"
