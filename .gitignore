@@ -9,4 +9,8 @@ logs/
 
 #parquet files and cleaned csvs because too large
 *.parquet
-clean_data/**.csv
+clean_data/business/**.csv
+clean_data/customer_management/**.csv
+clean_data/enterprise/**.csv
+clean_data/marketing/**.csv
+clean_data/operations/**.csv
