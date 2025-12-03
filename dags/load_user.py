@@ -12,6 +12,10 @@ default_args = {
 }
 
 def create_user_table():
+    """
+    Ensure dimUser table exists.
+    (We can refactor this later once you decide on the final table format.)
+    """
     pg_hook = PostgresHook(postgres_conn_id='postgres_default')
     conn = pg_hook.get_conn()
     cursor = conn.cursor()
@@ -45,30 +49,52 @@ def create_user_table():
     print("dimUser table ensured.")
 
 def load_user_data():
+    """
+    Load three CSV files:
+      - user_data.csv
+      - user_credit_card.csv
+      - user_job.csv
+
+    Merge them on user_id and insert into shopzada.dimUser.
+    """
     pg_hook = PostgresHook(postgres_conn_id='postgres_default')
     conn = pg_hook.get_conn()
     cursor = conn.cursor()
 
-    # Load the three parquet files
-    df_user = pd.read_parquet("/clean_data/customer/user_data.parquet")
-    df_card = pd.read_parquet("/clean_data/customer/user_credit_card.parquet")
-    df_job = pd.read_csv("/clean_data/customer/user_job_clean.csv")
+    # ---- paths to your CSV files inside the container ----
+    base_path = "/clean_data/customer"
+    user_data_path        = f"{base_path}/user_data.csv"
+    user_credit_card_path = f"{base_path}/user_credit_card.csv"
+    user_job_path         = f"{base_path}/user_job.csv"
 
-    # Merge on user_id
-    df = df_user.merge(df_card[['user_id','credit_card_number','issuing_bank']], on='user_id', how='left')
-    df = df.merge(df_job[['user_id','job_title','job_level']], on='user_id', how='left')
+    # ---- load CSVs ----
+    df_user = pd.read_csv(user_data_path)
+    df_card = pd.read_csv(user_credit_card_path)
+    df_job  = pd.read_csv(user_job_path)
 
-    # Convert dates to YYYYMMDD integers for dimDate
+    # ---- merge on user_id ----
+    df = df_user.merge(
+        df_card[['user_id', 'credit_card_number', 'issuing_bank']],
+        on='user_id',
+        how='left'
+    )
+    df = df.merge(
+        df_job[['user_id', 'job_title', 'job_level']],
+        on='user_id',
+        how='left'
+    )
+
+    # ---- convert dates to YYYYMMDD integer keys (for dimDate) ----
     df['creation_date'] = pd.to_datetime(df['creation_date']).dt.strftime('%Y%m%d').astype(int)
-    df['birthdate'] = pd.to_datetime(df['birthdate']).dt.strftime('%Y%m%d').astype(int)
+    df['birthdate']     = pd.to_datetime(df['birthdate']).dt.strftime('%Y%m%d').astype(int)
 
-    # Prepare values for batch insert
+    # ---- prepare values for batch insert ----
     values = [
         (
             row['user_id'],
-            row['creation_date'],
-            row['birthdate'],
-            row['name'],
+            row['creation_date'],        # user_creation_date_key
+            row['birthdate'],            # user_birth_date_key
+            row['name'],                 # user_name
             row.get('street'),
             row.get('state'),
             row.get('city'),
@@ -84,13 +110,24 @@ def load_user_data():
         for _, row in df.iterrows()
     ]
 
-    # Batch insert with ON CONFLICT
+    # ---- batch insert with ON CONFLICT (idempotent-ish) ----
     execute_values(cursor, """
         INSERT INTO shopzada.dimUser(
-            user_id, user_creation_date_key, user_birth_date_key, user_name,
-            user_street, user_state, user_city, user_country,
-            user_gender, user_device_address, user_user_type,
-            user_issuing_bank, user_credit_card, user_job_title, user_job_level
+            user_id,
+            user_creation_date_key,
+            user_birth_date_key,
+            user_name,
+            user_street,
+            user_state,
+            user_city,
+            user_country,
+            user_gender,
+            user_device_address,
+            user_user_type,
+            user_issuing_bank,
+            user_credit_card,
+            user_job_title,
+            user_job_level
         )
         VALUES %s
         ON CONFLICT (user_id) DO NOTHING;
