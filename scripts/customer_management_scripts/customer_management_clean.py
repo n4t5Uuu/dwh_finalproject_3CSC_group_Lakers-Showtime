@@ -5,23 +5,26 @@ from pathlib import Path
 
 # ================== CONFIG ================== #
 
-# Get Root:
-SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parents[1]
-RAW_DIR = PROJECT_ROOT / "data_files" / "Customer Management Department"
+RAW_DIR = Path("/data_files/Customer Management Department")
+OUT_DIR = Path("/clean_data/customer_management")
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Raw/Input Files:
 USER_DATA_FILE = RAW_DIR / "user_data.csv"
 USER_JOB_FILE = RAW_DIR / "user_job.csv"
 USER_CC_FILE = RAW_DIR / "user_credit_card.csv"
 
-# Outputs
-OUT_DIR = Path("/clean_data") / "customer_management"
-OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ================== CONFIG ================== #
 
 # ---------- Helpers shared by all parts ---------- #
+
+def to_date_key(dt: pd.Series) -> pd.Series:
+    """
+    Convert datetime series to int YYYYMMDD.
+    Invalid or NaT -> <NA>.
+    """
+    return dt.dt.strftime("%Y%m%d").astype("Int64")
+
 
 def _digits_from_user_id(uid: str) -> str:
     """Extract numeric part from something like 'USER012195'."""
@@ -93,6 +96,9 @@ def load_user_data(path: Path) -> pd.DataFrame:
     # Parse datetimes (invalid -> NaT)
     df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
     df["birthdate"] = pd.to_datetime(df["birthdate"], errors="coerce")
+
+    df["creation_date_key"] = to_date_key(df["creation_date"])
+    df["birth_date_key"] = to_date_key(df["birthdate"])
 
     # Force all countries to United States
     df["country"] = "United States"

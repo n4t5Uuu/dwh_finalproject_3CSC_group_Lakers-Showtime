@@ -6,15 +6,24 @@ import re
 
 
 # ================== CONFIG ================== #
+
+from pathlib import Path
+
+# RAW INPUT — matches your docker volume:
+#   ./data_files  →  /data_files
 INPUT_FILE = Path("/data_files/Business Department/product_list.csv")
 
-OUTPUT_DIR = Path("/clean_data") / "business"
+# CLEAN DATA OUTPUT — matches your docker volume:
+#   ./clean_data  →  /clean_data
+OUTPUT_DIR = Path("/clean_data/business")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_CSV = OUTPUT_DIR / "product_list.csv"
 OUTPUT_PARQUET = OUTPUT_DIR / "product_list.parquet"
 BAD_ROWS_CSV = OUTPUT_DIR / "product_list_issues.csv"
+
 # ================== CONFIG ================== #
+
 
 
 def _digits_from_id(val) -> str:

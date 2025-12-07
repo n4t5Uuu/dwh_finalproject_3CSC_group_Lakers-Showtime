@@ -41,6 +41,7 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
+      AIRFLOW__CORE__TEMPLATE_SEARCHPATH: "/opt/airflow/sql"
 
       AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 10
       AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
@@ -55,7 +56,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./data_files:/data_files
       - ./scripts:/scripts
-      - ./sql:/sql
+      - ./sql:/opt/airflow/sql
       - ./workflows:/workflows
       - ./clean_data:/clean_data
 
@@ -68,6 +69,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__TEMPLATE_SEARCHPATH: "/opt/airflow/sql"
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
 
@@ -83,7 +85,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./data_files:/data_files
       - ./scripts:/scripts
-      - ./sql:/sql
+      - ./sql:/opt/airflow/sql
       - ./workflows:/workflows
       - ./clean_data:/clean_data
 
@@ -98,6 +100,7 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
+      AIRFLOW__CORE__TEMPLATE_SEARCHPATH: "/opt/airflow/sql"
 
       AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 10
       AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
@@ -109,7 +112,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./data_files:/data_files
       - ./scripts:/scripts
-      - ./sql:/sql
+      - ./sql:/opt/airflow/sql
       - ./workflows:/workflows
       - ./clean_data:/clean_data
 
