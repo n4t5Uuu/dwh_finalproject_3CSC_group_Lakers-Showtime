@@ -1,4 +1,7 @@
 # Cleaning Script for Customer Management Department Tables
+# - Adds user_creation_effective_date based on earliest transaction_date
+# - Does NOT overwrite creation_date
+# - Only the FIRST duplicate per user_id can be adjusted; others keep their own creation_date
 
 import pandas as pd
 from pathlib import Path
@@ -8,20 +11,30 @@ from pathlib import Path
 # Get Root:
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parents[1]
-RAW_DIR = PROJECT_ROOT / "data_files" / "Customer Management Department"
+
+RAW_CUSTOMER_DIR = PROJECT_ROOT / "data_files" / "Customer Management Department"
+RAW_OPERATIONS_DIR = PROJECT_ROOT / "data_files" / "Operations Department"
 
 # Raw/Input Files:
-USER_DATA_FILE = RAW_DIR / "user_data.csv"
-USER_JOB_FILE = RAW_DIR / "user_job.csv"
-USER_CC_FILE = RAW_DIR / "user_credit_card.csv"
+USER_DATA_FILE = RAW_CUSTOMER_DIR / "user_data.csv"
+USER_JOB_FILE = RAW_CUSTOMER_DIR / "user_job.csv"
+USER_CC_FILE = RAW_CUSTOMER_DIR / "user_credit_card.csv"
+
+# Orders files (to infer earliest transaction_date per user)
+ORDER_FILES = [
+    "order_data_20200101-20200701.csv",
+    "order_data_20200701-20211001.csv",
+    "order_data_20211001-20220101.csv",
+    "order_data_20220101-20221201.csv",
+    "order_data_20221201-20230601.csv",
+    "order_data_20230601-20240101.csv",
+]
 
 # Outputs
 OUT_DIR = PROJECT_ROOT / "clean_data" / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ================== CONFIG ================== #
-
-# ---------- Helpers shared by all parts ---------- #
+# ================== HELPERS SHARED BY ALL PARTS ================== #
 
 
 def _digits_from_user_id(uid: str) -> str:
@@ -74,7 +87,7 @@ def save_outputs(clean_df: pd.DataFrame, issues_df: pd.DataFrame, name: str):
     print(f"  Issues CSV: {issues_path}\n")
 
 
-# ---------- USER DATA ---------- #
+# ================== LOAD FUNCTIONS ================== #
 
 def load_user_data(path: Path) -> pd.DataFrame:
     """Load and minimally clean user_data.csv."""
@@ -100,6 +113,110 @@ def load_user_data(path: Path) -> pd.DataFrame:
 
     return df
 
+
+def load_all_orders() -> pd.DataFrame:
+    """Load and concatenate all order_data_* files for earliest transaction calc."""
+    dfs = []
+    for fname in ORDER_FILES:
+        fpath = RAW_OPERATIONS_DIR / fname
+        if not fpath.exists():
+            print(f"[WARN] Missing order file (skipped): {fpath}")
+            continue
+
+        df = pd.read_csv(fpath)
+
+        if "Unnamed: 0" in df.columns:
+            df = df.drop(columns=["Unnamed: 0"])
+
+        if "transaction_date" in df.columns:
+            df["transaction_date"] = pd.to_datetime(
+                df["transaction_date"], errors="coerce"
+            )
+        dfs.append(df)
+
+    if not dfs:
+        print("[WARN] No orders loaded for creation-date alignment.")
+        return pd.DataFrame()
+
+    return pd.concat(dfs, ignore_index=True)
+
+
+# ================== USER CREATION EFFECTIVE DATE ================== #
+
+def add_user_creation_effective_date(user_df: pd.DataFrame, orders_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add user_creation_effective_date column:
+
+    - Compute earliest transaction_date per user_id from orders.
+    - For each user_id group:
+        * Identify the FIRST row (based on original file order).
+        * For that row:
+            - If earliest_tx exists and is earlier than creation_date (or creation_date is NaT),
+              then user_creation_effective_date = earliest_tx.
+            - Else user_creation_effective_date = creation_date.
+        * For subsequent duplicates:
+            - user_creation_effective_date = creation_date (unchanged).
+    - Original creation_date is NEVER overwritten.
+    """
+
+    df = user_df.copy()
+
+    # Start with the original creation_date as default
+    df["user_creation_effective_date"] = df["creation_date"]
+
+    if orders_df.empty or "transaction_date" not in orders_df.columns:
+        print("[INFO] No valid orders to adjust creation dates; using creation_date as effective date.")
+        return df
+
+    # Ensure IDs and dates are typed correctly
+    orders_df = orders_df.copy()
+    orders_df["user_id"] = orders_df["user_id"].astype(str)
+    orders_df["transaction_date"] = pd.to_datetime(
+        orders_df["transaction_date"], errors="coerce"
+    )
+
+    # Earliest transaction per user_id
+    earliest_tx = (
+        orders_df
+        .dropna(subset=["transaction_date"])
+        .groupby("user_id", as_index=False)["transaction_date"]
+        .min()
+        .rename(columns={"transaction_date": "earliest_transaction_date"})
+    )
+
+    # Remember original row order
+    df["_orig_index"] = df.index
+
+    # Merge earliest_tx into user_df on user_id
+    df = df.merge(earliest_tx, on="user_id", how="left")
+
+    # Mark the "first duplicate" per user_id based on original order
+    df = df.sort_values("_orig_index")
+    df["is_first_for_user"] = ~df.duplicated(subset=["user_id"])
+
+    # Condition: only first row in each user_id group can be adjusted
+    # and only if earliest_tx exists and is earlier than (or replaces missing) creation_date.
+    cond = (
+        df["is_first_for_user"]
+        & df["earliest_transaction_date"].notna()
+        & (
+            df["creation_date"].isna()
+            | (df["earliest_transaction_date"] < df["creation_date"])
+        )
+    )
+
+    df.loc[cond, "user_creation_effective_date"] = df.loc[
+        cond, "earliest_transaction_date"
+    ]
+
+    # Clean up helper columns used for this step only
+    df = df.drop(columns=["earliest_transaction_date",
+                 "is_first_for_user", "_orig_index"])
+
+    return df
+
+
+# ================== USER ID / KEY ASSIGNMENT ================== #
 
 def assign_user_ids_and_keys(user_data: pd.DataFrame):
     """
@@ -167,7 +284,7 @@ def assign_user_ids_and_keys(user_data: pd.DataFrame):
     return df, mapping
 
 
-# ---------- USER JOB (combined cleaning + ingest) ---------- #
+# ================== USER JOB ================== #
 
 def load_and_clean_user_job(path: Path, mapping: pd.DataFrame) -> pd.DataFrame:
     """Load user_job.csv, apply Student fix, attach user_key from mapping."""
@@ -186,7 +303,7 @@ def load_and_clean_user_job(path: Path, mapping: pd.DataFrame) -> pd.DataFrame:
     if "job_level" not in df.columns:
         df["job_level"] = pd.NA
 
-    # Fix Student rows with null job_level (logic from user_job_clean.py)
+    # Fix Student rows with null job_level
     is_student = df["job_title"].str.lower() == "student"
     is_level_null = df["job_level"].isna()
     fix_mask = is_student & is_level_null
@@ -215,7 +332,7 @@ def load_and_clean_user_job(path: Path, mapping: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ---------- USER CREDIT CARD (combined cleaning + ingest) ---------- #
+# ================== USER CREDIT CARD ================== #
 
 def load_and_clean_user_credit_card(path: Path, mapping: pd.DataFrame) -> pd.DataFrame:
     """Load user_credit_card.csv, attach user_key from mapping."""
@@ -252,7 +369,7 @@ def load_and_clean_user_credit_card(path: Path, mapping: pd.DataFrame) -> pd.Dat
     return df
 
 
-# ---------- MAIN PIPELINE ---------- #
+# ================== MAIN PIPELINE ================== #
 
 def main():
     print("=== Ingesting Customer Management datasets (combined) ===\n")
@@ -263,17 +380,23 @@ def main():
     print(user_data_raw.head(), "\n")
     print(user_data_raw.dtypes, "\n")
 
-    # Renumber duplicate user_ids and create prefixed user_key + mapping
-    user_data_fixed, user_key_mapping = assign_user_ids_and_keys(user_data_raw)
+    # ---------- load orders for effective-date logic ---------- #
+    print("Loading orders for user_creation_effective_date ...")
+    all_orders = load_all_orders()
+
+    # Add user_creation_effective_date (does NOT overwrite creation_date)
+    print("Calculating user_creation_effective_date per user_id ...")
+    user_data_with_effective = add_user_creation_effective_date(
+        user_data_raw, all_orders)
+
+    # ---------- assign new user_ids and user_keys ---------- #
+    user_data_fixed, user_key_mapping = assign_user_ids_and_keys(
+        user_data_with_effective)
 
     # user_data: after renumbering, user_id should be unique; issues mostly null rows
     user_data_clean, user_data_issues = split_clean_and_issues(
         user_data_fixed, key_cols=["user_id"]
     )
-
-    # Add an explicit reference creation date for temporal joins with orders
-    user_data_clean["user_creation_effective_date"] = user_data_clean["creation_date"]
-
     save_outputs(user_data_clean, user_data_issues, "user_data")
 
     # ---------- user_job (clean + ingest) ---------- #
