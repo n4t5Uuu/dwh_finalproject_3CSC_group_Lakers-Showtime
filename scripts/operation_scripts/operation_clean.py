@@ -66,6 +66,16 @@ def load_concat_files(files: list[str]) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True)
 
 
+def save_csv_parquet(df: pd.DataFrame, name: str):
+    csv_path = OUT_DIR / f"{name}.csv"
+    parquet_path = OUT_DIR / f"{name}.parquet"
+
+    df.to_csv(csv_path, index=False)
+    df.to_parquet(parquet_path, index=False)
+
+    print(f"[OK] Saved: {csv_path} and {parquet_path}")
+
+
 # ============================================================
 #                  ORDERS CLEANING
 # ============================================================
@@ -96,59 +106,89 @@ def clean_orders(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def assign_user_keys_to_orders(orders_df: pd.DataFrame, user_data_df: pd.DataFrame):
+
+def assign_user_keys_to_orders(orders_df: pd.DataFrame, user_data_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Match each order to the correct user_key using temporal logic.
-    - If duplicate user_ids exist, assign based on creation_date vs transaction_date.
+    Attach user_key to each order using BOTH:
+    - user_data.creation_date
+    - orders.transaction_date
+
+    Logic:
+    1) For each (user_id_orig, transaction_date):
+       choose the latest user row where creation_date <= transaction_date.
+    2) If no creation_date <= transaction_date exists for that user_id_orig,
+       fall back to the earliest creation_date for that user_id_orig.
     """
 
-    # Normalize ID fields
-    orders_df["user_id"] = orders_df["user_id"].astype(str)
-    user_data_df["user_id_orig"] = user_data_df["user_id_orig"].astype(str)
+    if orders_df.empty:
+        return orders_df
 
-    # Convert dates
-    orders_df["transaction_date"] = pd.to_datetime(orders_df["transaction_date"], errors="coerce")
-    user_data_df["creation_date"] = pd.to_datetime(user_data_df["creation_date"], errors="coerce")
+    # ---- Normalize IDs ----
+    orders = orders_df.copy()
+    users = user_data_df.copy()
 
-    merged_list = []
+    # Orders use original user_id (e.g. "USER40678")
+    orders["user_id"] = orders["user_id"].astype(str)
+    orders["transaction_date"] = pd.to_datetime(
+        orders["transaction_date"], errors="coerce"
+    )
 
-    # Process each order user_id separately for performance
-    for uid, order_group in orders_df.groupby("user_id"):
-        user_subset = user_data_df[user_data_df["user_id_orig"] == uid].copy()
+    # user_data_clean from Customer Management has:
+    #  - user_id_orig (original id)
+    #  - creation_date
+    #  - user_key
+    users["user_id_orig"] = users["user_id_orig"].astype(str)
+    users["creation_date"] = pd.to_datetime(
+        users["creation_date"], errors="coerce"
+    )
 
-        if user_subset.empty:
-            # No match at all → leave user_key = None
-            order_group["user_key"] = None
-            merged_list.append(order_group)
-            continue
+    # We'll join using the *original* user_id coming from orders
+    orders["user_id_orig"] = orders["user_id"]
 
-        # If EXACTLY one user matches → easy
-        if len(user_subset) == 1:
-            order_group["user_key"] = user_subset["user_key"].iloc[0]
-            merged_list.append(order_group)
-            continue
+    # Only keep needed columns for the SCD-style join
+    users_scd = users[["user_id_orig", "creation_date", "user_key"]].copy()
 
-        # Multiple users → temporal matching
-        user_subset = user_subset.sort_values("creation_date")
+    # 🔑 Important: sort by the "on" keys only for merge_asof
+    users_scd = users_scd.sort_values("creation_date")
+    orders = orders.sort_values("transaction_date")
 
-        def pick_user_key(row):
-            # Find all user versions created before the order date
-            valid = user_subset[user_subset["creation_date"] <= row["transaction_date"]]
+    # ---- Primary rule: SCD-like as-of join ----
+    merged = pd.merge_asof(
+        orders,
+        users_scd,
+        left_on="transaction_date",
+        right_on="creation_date",
+        by="user_id_orig",
+        direction="backward",       # creation_date <= transaction_date
+        allow_exact_matches=True,
+    )
 
-            if len(valid) > 0:
-                # pick the most recent version before order
-                return valid.iloc[-1]["user_key"]
-            else:
-                # order occurs before any user record — pick earliest version
-                return user_subset.iloc[0]["user_key"]
+    # ---- Fallback: if no creation_date <= transaction_date for that user ----
+    mask_missing = merged["user_key"].isna()
 
-        order_group["user_key"] = order_group.apply(pick_user_key, axis=1)
-        merged_list.append(order_group)
+    if mask_missing.any():
+        earliest = (
+            users_scd
+            .sort_values("creation_date")
+            .drop_duplicates(subset=["user_id_orig"], keep="first")
+            [["user_id_orig", "user_key"]]
+            .rename(columns={"user_key": "fallback_user_key"})
+        )
 
-    # Combine enhanced orders
-    final = pd.concat(merged_list, ignore_index=True)
-    return final
+        merged = merged.merge(earliest, on="user_id_orig", how="left")
 
+        merged.loc[mask_missing, "user_key"] = merged.loc[
+            mask_missing, "fallback_user_key"
+        ]
+
+        merged = merged.drop(columns=["fallback_user_key"])
+
+    # ---- Drop helper columns you don't want in the final fact ----
+    cols_to_drop = [c for c in ["user_id_orig",
+                                "creation_date"] if c in merged.columns]
+    merged = merged.drop(columns=cols_to_drop)
+
+    return merged
 
 
 # ============================================================
@@ -181,7 +221,6 @@ def clean_order_delays(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-
 # ============================================================
 #                  LINE ITEM CLEANING
 # ============================================================
@@ -193,11 +232,13 @@ def clean_prices(df: pd.DataFrame) -> pd.DataFrame:
 
     if "quantity" in df.columns:
         df["quantity_clean"] = (
-            df["quantity"].astype(str).str.extract(r"(\d+)", expand=False).fillna("0")
+            df["quantity"].astype(str).str.extract(
+                r"(\d+)", expand=False).fillna("0")
         )
 
         df["quantity_clean"] = (
-            pd.to_numeric(df["quantity_clean"], errors="coerce").fillna(0).astype(int)
+            pd.to_numeric(df["quantity_clean"],
+                          errors="coerce").fillna(0).astype(int)
         )
 
         df = df.drop(columns=["quantity"])
@@ -250,20 +291,6 @@ def join_prices_products(price_df: pd.DataFrame, product_df: pd.DataFrame) -> pd
 
 
 # ============================================================
-#                     SAVE HELPERS
-# ============================================================
-
-def save_csv_parquet(df: pd.DataFrame, name: str):
-    csv_path = OUT_DIR / f"{name}.csv"
-    parquet_path = OUT_DIR / f"{name}.parquet"
-
-    df.to_csv(csv_path, index=False)
-    df.to_parquet(parquet_path, index=False)
-
-    print(f"[OK] Saved: {csv_path} and {parquet_path}")
-
-
-# ============================================================
 #                     MAIN PIPELINE
 # ============================================================
 
@@ -300,21 +327,20 @@ def main():
     save_csv_parquet(orders_final, "orders_final")
 
     # ==========================================================
-    #        NEW: USER-KEY ASSIGNMENT (Customer Management)
+    #        USER-KEY ASSIGNMENT (Customer Management)
     # ==========================================================
 
-    # Path to cleaned user_data from Customer Management Dept
-    USER_CLEAN_PATH = PROJECT_ROOT / "clean_data" / "customer_management" / "user_data.csv"
+    USER_CLEAN_PATH = PROJECT_ROOT / "clean_data" / \
+        "customer_management" / "user_data.csv"
 
     if USER_CLEAN_PATH.exists():
         print("Loading user_data clean file for user_key assignment...")
         user_data_clean = pd.read_csv(USER_CLEAN_PATH)
 
-        # Assign the correct user_key to each order
-        print("Assigning user_key to orders using temporal logic...")
-        orders_final_enhanced = assign_user_keys_to_orders(orders_final, user_data_clean)
+        print("Assigning user_key to orders using temporal logic (creation_date vs transaction_date)...")
+        orders_final_enhanced = assign_user_keys_to_orders(
+            orders_final, user_data_clean)
 
-        # Save enhanced version
         save_csv_parquet(orders_final_enhanced, "orders_final_enhanced")
     else:
         print("[WARN] No user_data.csv found → cannot assign user_key to orders.")
@@ -332,7 +358,6 @@ def main():
     save_csv_parquet(line_items_final, "line_item_final")
 
     print("[DONE] Operation Department cleaning pipeline finished.")
-
 
 
 if __name__ == "__main__":

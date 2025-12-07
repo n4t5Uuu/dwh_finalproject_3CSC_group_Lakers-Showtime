@@ -16,12 +16,13 @@ USER_JOB_FILE = RAW_DIR / "user_job.csv"
 USER_CC_FILE = RAW_DIR / "user_credit_card.csv"
 
 # Outputs
-OUT_DIR = Path("/clean_data") / "customer_management"
+OUT_DIR = PROJECT_ROOT / "clean_data" / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ================== CONFIG ================== #
 
 # ---------- Helpers shared by all parts ---------- #
+
 
 def _digits_from_user_id(uid: str) -> str:
     """Extract numeric part from something like 'USER012195'."""
@@ -154,7 +155,8 @@ def assign_user_ids_and_keys(user_data: pd.DataFrame):
         return group
 
     # groupby with sort=False so groups follow first appearance in the file
-    df = df.groupby("user_id_orig", sort=False, group_keys=False).apply(process_group)
+    df = df.groupby("user_id_orig", sort=False,
+                    group_keys=False).apply(process_group)
 
     # Build mapping from original IDs to user_key
     mapping = df[["user_id_orig", "name", "user_key"]].drop_duplicates()
@@ -268,6 +270,10 @@ def main():
     user_data_clean, user_data_issues = split_clean_and_issues(
         user_data_fixed, key_cols=["user_id"]
     )
+
+    # Add an explicit reference creation date for temporal joins with orders
+    user_data_clean["user_creation_effective_date"] = user_data_clean["creation_date"]
+
     save_outputs(user_data_clean, user_data_issues, "user_data")
 
     # ---------- user_job (clean + ingest) ---------- #

@@ -27,20 +27,18 @@ TO-DO NEXT:
 
 UNCLEAN DATA:
 > FOR ALL:
-   - keys must have some letters signifying if user sila, staff, or merchant. (e.g. S12941-1). 
-   - dapat 5 digits lahat (or pwede rin for scalability gawing 6 digits. e.g. S012941-1). If may babaguhin check again for duplicates that may occur
-   - locations will not be USA anymore, base on number phone number to get state(?) then use lookup table.
+   (/) keys must have some letters signifying if user sila, staff, or merchant. (e.g. S12941-1). 
+   (/) dapat 5 digits lahat (or pwede rin for scalability gawing 6 digits. e.g. S012941-1). If may babaguhin check again for duplicates that may occur
+   (?) locations will not be USA anymore, base on number phone number to get state(?) then use lookup table.
 > Business Department
-   - product_list (yung toolss)
+   (/) product_list (yung toolss)
 > Enterprise Department
-   - order_with_merchant (cascade with keys)
-   - if 4 digits lang merchant id, it should concat 0 sa unahan ng number sa merchant key. Same with staff.
-> Marketing Department
-   - transactional_campaign_data.csv
+   (/) order_with_merchant (cascade with keys)
+   (/) if 4 digits lang merchant id, it should concat 0 sa unahan ng number sa merchant key. Same with staff.
 > Operations Department
-   - to analyze pa
-   - all order files (cascade with keys)
-   - create new user if wala kwenta yung transaction date sa orders.
+   (?) to analyze pa
+   (/) all order files (cascade with keys)
+   (x-no need na) create new user if wala kwenta yung transaction date sa orders.
 
 FIX FOLDER STRUCTURE
 - if possible, lipat load and cleaning scripts sa scripts/ lang and no more need to organize by departments
@@ -56,5 +54,5 @@ DASHBOARD
 - start the draft for DASHBOARD
 
 DOCUMENTATION:
-- Progress Report (12/1/25)
+(/) Progress Report (12/1/25)
 - Docs/Compilation of assumptions and rules we set on cleaning the data.
