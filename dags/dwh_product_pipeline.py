@@ -72,7 +72,21 @@ with DAG(
         python_callable=load_staging_product_data,
     )
 
+    create_dim_product = PostgresOperator(
+        task_id="create_dim_product",
+        postgres_conn_id="postgres_default",
+        sql="""
+            CREATE SCHEMA IF NOT EXISTS shopzada;
 
+            CREATE TABLE IF NOT EXISTS shopzada.dimProduct (
+                product_key VARCHAR(40) PRIMARY KEY,
+                product_id VARCHAR(40),
+                product_name VARCHAR(255),
+                product_type VARCHAR(100),
+                price NUMERIC(12,2)
+            );
+        """
+    )
     # --------------------------------------
     # 3. INSERT INTO DIM PRODUCT (DEDUPED)
     # --------------------------------------
@@ -102,4 +116,4 @@ with DAG(
     # --------------------------------------
     # PIPELINE ORDER
     # --------------------------------------
-    create_staging_product >> load_staging >> load_dim_product
+    create_staging_product >> load_staging >> create_dim_product >> load_dim_product

@@ -129,19 +129,23 @@ with DAG(
         task_id="create_dim_staff",
         postgres_conn_id="postgres_default",
         sql="""
-        CREATE TABLE IF NOT EXISTS shopzada.dimStaff (
-            staff_key VARCHAR(40) PRIMARY KEY,
-            staff_id VARCHAR(40) NOT NULL,   -- removed UNIQUE!
-            name VARCHAR(200),
-            job_level VARCHAR(50),
-            street VARCHAR(200),
-            state VARCHAR(100),
-            city VARCHAR(100),
-            country VARCHAR(100),
-            contact_number VARCHAR(50),
-            creation_date DATE,
-            staff_creation_date_key INT
-        );
+            CREATE TABLE IF NOT EXISTS shopzada.dimStaff (
+                staff_key VARCHAR(40) PRIMARY KEY,
+                staff_id VARCHAR(40) NOT NULL,
+                name VARCHAR(200),
+                job_level VARCHAR(50),
+                street VARCHAR(200),
+                state VARCHAR(100),
+                city VARCHAR(100),
+                country VARCHAR(100),
+                contact_number VARCHAR(50),
+                creation_date DATE,
+                staff_creation_date_key INT
+            );
+
+            -- remove leftover unique constraint
+            ALTER TABLE shopzada.dimStaff
+            DROP CONSTRAINT IF EXISTS dimstaff_staff_id_key;
         """
     )
 
