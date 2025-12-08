@@ -39,7 +39,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      # AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
       AIRFLOW__CORE__TEMPLATE_SEARCHPATH: "/opt/airflow/sql"
 
@@ -68,7 +68,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      # AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__TEMPLATE_SEARCHPATH: "/opt/airflow/sql"
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
@@ -98,7 +98,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      # AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__WEBSERVER__SECRET_KEY: "supersecretkey123"
       AIRFLOW__CORE__TEMPLATE_SEARCHPATH: "/opt/airflow/sql"
 

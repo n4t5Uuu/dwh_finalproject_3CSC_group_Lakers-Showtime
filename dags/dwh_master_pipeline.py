@@ -1,69 +1,77 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime
-import sys
-import os
-sys.path.append("/scripts")
 
-from business_scripts.business_clean import main as business_main
-from customer_management_scripts.customer_management_clean import main as cm_main
-from enterprise_scripts.enterprise_clean import main as enterprise_main
-from marketing_scripts.marketing_clean import main as marketing_main
-from operation_scripts.operation_clean import main as operation_main
-from build_dim_date import main as dim_date_main
-from build_fact_orders import main as fact_main
-from setup_directories import main as setup_dirs_main
-
-# -----------------------------------------
-# DAG DEFINITION
-# -----------------------------------------
 with DAG(
     dag_id="dwh_master_pipeline",
     start_date=datetime(2025, 1, 1),
     schedule_interval=None,
     catchup=False,
-    tags=["dwh"],
+    tags=["dwh", "master"],
 ) as dag:
 
-    task_business = PythonOperator(
-        task_id="ingest_business",
-        python_callable=business_main,
+    # 1 — DIM DATE FIRST
+    dim_date = TriggerDagRunOperator(
+        task_id="run_dim_date_pipeline",
+        trigger_dag_id="dwh_dim_date_pipeline",
+        wait_for_completion=True
     )
 
-    task_customer = PythonOperator(
-        task_id="ingest_customer_management",
-        python_callable=cm_main,
+    # 2 — DIMENSION TABLES (can run in parallel)
+    dim_user = TriggerDagRunOperator(
+        task_id="run_user_pipeline",
+        trigger_dag_id="dwh_user_pipeline",
+        wait_for_completion=True
     )
 
-    task_enterprise = PythonOperator(
-        task_id="ingest_enterprise",
-        python_callable=enterprise_main,
+    dim_product = TriggerDagRunOperator(
+        task_id="run_product_pipeline",
+        trigger_dag_id="dwh_product_pipeline",
+        wait_for_completion=True
     )
 
-    task_marketing = PythonOperator(
-        task_id="ingest_marketing",
-        python_callable=marketing_main,
+    dim_merchant = TriggerDagRunOperator(
+        task_id="run_merchant_pipeline",
+        trigger_dag_id="dwh_merchant_pipeline",
+        wait_for_completion=True
     )
 
-    task_operations = PythonOperator(
-        task_id="ingest_operations",
-        python_callable=operation_main,
+    dim_staff = TriggerDagRunOperator(
+        task_id="run_staff_pipeline",
+        trigger_dag_id="dwh_staff_pipeline",
+        wait_for_completion=True
     )
 
-    task_fact_orders = PythonOperator(
-        task_id="build_fact_orders",
-        python_callable=fact_main,
+    dim_campaign = TriggerDagRunOperator(
+        task_id="run_campaign_pipeline",
+        trigger_dag_id="dwh_campaign_pipeline",
+        wait_for_completion=True
     )
 
-    setup_dirs = PythonOperator(
-        task_id="setup_directories",
-        python_callable=setup_dirs_main
+    # 3 — FACT TABLES (run after all dims)
+    fact_orders = TriggerDagRunOperator(
+        task_id="run_fact_orders_pipeline",
+        trigger_dag_id="dwh_fact_orders_pipeline",
+        wait_for_completion=True
     )
 
-    task_build_dim_date = PythonOperator(
-        task_id="build_dim_date",
-        python_callable=dim_date_main,
+    fact_lineitem = TriggerDagRunOperator(
+        task_id="run_fact_lineitem_pipeline",
+        trigger_dag_id="dwh_fact_lineitem_pipeline",
+        wait_for_completion=True
     )
 
-    # ----- DEFINE PIPELINE ORDER -----
-    setup_dirs >> task_build_dim_date >> task_business >> task_customer >> task_enterprise >> task_marketing >> task_operations >> task_fact_orders
+    fact_campaign = TriggerDagRunOperator(
+        task_id="run_fact_campaign_pipeline",
+        trigger_dag_id="dwh_fact_campaign_pipeline",
+        wait_for_completion=True
+    )
+
+    # ───────────────────────────────
+    # DEPENDENCIES
+    # ───────────────────────────────
+
+    dim_date >> [dim_user, dim_product, dim_merchant, dim_staff, dim_campaign]
+
+    [dim_user, dim_product, dim_merchant, dim_staff, dim_campaign] >> fact_orders
+    fact_orders >> [fact_lineitem, fact_campaign]

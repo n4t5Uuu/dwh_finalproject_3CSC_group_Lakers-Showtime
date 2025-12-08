@@ -7,6 +7,7 @@ from datetime import datetime
 # -----------------------------------
 SQL_CREATE_ALL_TABLES = """
 
+
 CREATE SCHEMA IF NOT EXISTS shopzada;
 
 -- ========================================
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS shopzada.dimDate (
 -- DIM USER
 -- ========================================
 CREATE TABLE IF NOT EXISTS shopzada.dimUser (
-    user_key                BIGINT PRIMARY KEY,
+    user_key                VARCHAR(30) PRIMARY KEY,
     user_id                 VARCHAR(30) UNIQUE NOT NULL,
     name                    VARCHAR(200),
     age                     INT,
@@ -54,7 +55,7 @@ CREATE TABLE IF NOT EXISTS shopzada.dimUser (
 -- ========================================
 CREATE TABLE IF NOT EXISTS shopzada.dimMerchant (
     merchant_key               VARCHAR(40) PRIMARY KEY,
-    merchant_id                VARCHAR(40) UNIQUE NOT NULL,
+    merchant_id                VARCHAR(40) NOT NULL,
     name                       VARCHAR(200),
     street                     VARCHAR(200),
     state                      VARCHAR(100),
@@ -94,12 +95,24 @@ CREATE TABLE IF NOT EXISTS shopzada.dimCampaign (
 );
 
 -- ========================================
+-- DIM PRODUCT
+-- ========================================
+CREATE TABLE IF NOT EXISTS shopzada.dimProduct (
+    product_key        VARCHAR(40) PRIMARY KEY,
+    product_id         VARCHAR(40) UNIQUE NOT NULL,
+    product_name       VARCHAR(255),
+    product_type       VARCHAR(100),
+    price              NUMERIC(12,2)
+);
+
+
+-- ========================================
 -- FACT ORDERS
 -- ========================================
 CREATE TABLE IF NOT EXISTS shopzada.factOrders (
     order_key              BIGSERIAL PRIMARY KEY,
-    order_id               VARCHAR(100),
-    user_key               BIGINT REFERENCES shopzada.dimUser(user_key),
+    order_id               VARCHAR(100) UNIQUE,
+    user_key               VARCHAR(30) REFERENCES shopzada.dimUser(user_key),
     merchant_key           VARCHAR(40) REFERENCES shopzada.dimMerchant(merchant_key),
     staff_key              VARCHAR(40) REFERENCES shopzada.dimStaff(staff_key),
     date_key               INT REFERENCES shopzada.dimDate(date_key),
@@ -114,11 +127,10 @@ CREATE TABLE IF NOT EXISTS shopzada.factOrders (
 CREATE TABLE IF NOT EXISTS shopzada.factLineItem (
     line_key            BIGSERIAL PRIMARY KEY,
     order_id            VARCHAR(100),
-    user_key            BIGINT,
+    user_key            VARCHAR(30),
     merchant_key        VARCHAR(40),
     staff_key           VARCHAR(40),
     product_id          VARCHAR(50),
-    product_name        VARCHAR(200),
     price_per_quantity  NUMERIC(12,2),
     quantity            INT,
     line_amount         NUMERIC(14,2),
@@ -130,12 +142,21 @@ CREATE TABLE IF NOT EXISTS shopzada.factLineItem (
 -- ========================================
 CREATE TABLE IF NOT EXISTS shopzada.factCampaignAvailed (
     campaign_availed_key  BIGSERIAL PRIMARY KEY,
+
+    -- Natural grain
     order_id              VARCHAR(100),
-    campaign_key          VARCHAR(40),
-    user_key              BIGINT,
+    campaign_key          VARCHAR(40) REFERENCES shopzada.dimCampaign(campaign_key),
+
+    -- Foreign keys for filtering capability
+    user_key              VARCHAR(30),
     merchant_key          VARCHAR(40),
     staff_key             VARCHAR(40),
-    date_key              INT,
+
+    -- Date of the event
+    date_key              INT REFERENCES shopzada.dimDate(date_key),
+
+    -- Measures
+    availed               INT,
     discount_pct          INT
 );
 
