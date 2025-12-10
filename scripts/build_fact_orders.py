@@ -8,12 +8,14 @@ from pathlib import Path
 # ---------------- PATH SETUP ---------------- #
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parents[0]
+PROJECT_ROOT = SCRIPT_DIR.parent  # Go up one level to project root
 
-CLEAN_DIR = Path("/clean_data")
+# USE PROJECT_ROOT HERE:
+CLEAN_DIR = PROJECT_ROOT / "clean_data"
 OPS_DIR = CLEAN_DIR / "operations"
 MKT_DIR = CLEAN_DIR / "marketing"
 
+# Now these paths will be correct absolute paths on your machine
 ORDERS_FILE = OPS_DIR / "orders_final_ready.csv"
 LINEITEM_FILE = OPS_DIR / "line_item_final.csv"
 CAMPAIGN_FILE = MKT_DIR / "campaign_data.csv"
@@ -21,7 +23,6 @@ TXN_CAMPAIGN_FILE = MKT_DIR / "transactional_campaign_data.csv"
 
 OUT_DIR = CLEAN_DIR / "facts"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-
 
 # ============================================================
 #                   UTILITIES
