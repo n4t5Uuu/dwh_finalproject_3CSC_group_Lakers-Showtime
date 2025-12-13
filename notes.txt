@@ -1,60 +1,40 @@
 Rebuild " docker-compose down "
+Restart " docker-compose down -v "
 Run " docker-compose up -d "
-try username: admin, password: admin 
+
+try login sa airflow:
+username: admin, 
+password: admin 
+
 if not work:
     docker-compose exec airflow-webserver airflow users create --username admin --firstname Air --lastname Flow --role Admin --email admin@example.com --password admin
 
+Sa airflow, go to connections, navigate to postgres-default , then set
+Host: postgres
+Database: airflow
+Login: airflow
+Password: airflow
+Port: 5432
 
--- check SQL
-docker exec -it final_proj-postgres-1 bash 
-psql -U airflow -d airflow
+Then save changes
 
--- SQL to check table
-SELECT COUNT(*) FROM shopzada.dimDate;
-SELECT COUNT(*) FROM shopzada.dimCampaign;
-SELECT COUNT(*) FROM shopzada.dimMerchant;
-SELECT COUNT(*) FROM shopzada.dimStaff;
-SELECT COUNT(*) FROM shopzada.dimUser;
-SELECT COUNT(*) FROM shopzada.dimProduct;
+ONLY USE DWH TAGS
+Order of execution:
+1. dwh_raw_cleaning_pipeline
+2. dwh_staff_pipeline ; dwh_merchant_pipeline ; dwh_user_pipeline ; dwh_product_pipeline ; dwh_campaign_pipeline ; dwh_dim_date_pipeline
+3. dwh_ddl_pipeline
+4. dwh_fact_pipeline
 
+NOTE: IGNORE dwh_master_pipeline
 
+To access pgadmin
+email: admin@admin.com
+password: admin
 
-NOTES: (Cleaning - 11/30/25)
-*fixed dupes for customer management
-*fixed staff and merchant stuff 
-*fixed staff and merchant duplicates (add key)
-TO-DO NEXT:
-
-UNCLEAN DATA:
-> FOR ALL:
-   - keys must have some letters signifying if user sila, staff, or merchant. (e.g. S12941-1). 
-   - dapat 5 digits lahat (or pwede rin for scalability gawing 6 digits. e.g. S012941-1). If may babaguhin check again for duplicates that may occur
-   - locations will not be USA anymore, base on number phone number to get state(?) then use lookup table.
-> Business Department
-   - product_list (yung toolss)
-> Enterprise Department
-   - order_with_merchant (cascade with keys)
-   - if 4 digits lang merchant id, it should concat 0 sa unahan ng number sa merchant key. Same with staff.
-> Marketing Department
-   - transactional_campaign_data.csv
-> Operations Department
-   - to analyze pa
-   - all order files (cascade with keys)
-   - create new user if wala kwenta yung transaction date sa orders.
-
-FIX FOLDER STRUCTURE
-- if possible, lipat load and cleaning scripts sa scripts/ lang and no more need to organize by departments
-
-LOAD DATA:
-- finish scripts for Staging Layer
-- finish scripts for Dimension Layer
-
-FOR AIRFLOW:
-- better ata if one run/trigger lang yung CLEAN/LOAD(INGEST)(???)
-
-DASHBOARD
-- start the draft for DASHBOARD
-
-DOCUMENTATION:
-- Progress Report (12/1/25)
-- Docs/Compilation of assumptions and rules we set on cleaning the data.
+Register server (Right click Servers)
+general tab - name: shopzada
+connection tab - host name / address: postgres
+connection tab - Port : 5432
+connection tab - Maintenance database : airflow
+connection tab - Username: airflow
+connection tab - Password: airflow
