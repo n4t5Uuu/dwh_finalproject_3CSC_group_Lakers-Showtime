@@ -1,28 +1,23 @@
 # Cleaning Script for Enterprise Department Tables (FINAL FIXED VERSION)
 
-import pandas as pd
 from pathlib import Path
+import pandas as pd
 import re
 
-# ============================================================
-# CONFIG — USE ABSOLUTE PATHS (NO MORE WRONG CLEANING)
-# ============================================================
+SCRIPT_DIR = Path(__file__).resolve().parent          # ...\scripts\enterprise_scripts
+PROJECT_ROOT = SCRIPT_DIR.parents[1]                  # ...\dwh_finalproject_3CSC_group_Lakers-Showtime
 
-# ROOT OF PROJECT 
-RAW_DIR = Path("/data_files/Enterprise Department")
-OUT_DIR = Path("/clean_data/enterprise")
+RAW_DIR = PROJECT_ROOT / "data_files" / "Enterprise Department"
+OUT_DIR = PROJECT_ROOT / "clean_data" / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-
-# RAW INPUT FILES
 MERCHANT_FILE = RAW_DIR / "merchant_data.csv"
-STAFF_FILE = RAW_DIR / "staff_data.csv"
+STAFF_FILE    = RAW_DIR / "staff_data.csv"
 ORDER_FILES = [
     RAW_DIR / "order_with_merchant_data1.csv",
     RAW_DIR / "order_with_merchant_data2.csv",
     RAW_DIR / "order_with_merchant_data3.csv",
 ]
-
 # ============================================================
 # HELPERS
 # ============================================================

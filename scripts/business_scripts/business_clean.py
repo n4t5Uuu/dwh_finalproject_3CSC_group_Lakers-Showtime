@@ -7,20 +7,17 @@ import re
 
 # ================== CONFIG ================== #
 
-from pathlib import Path
-
 # RAW INPUT — matches your docker volume:
 #   ./data_files  →  /data_files
-INPUT_FILE = Path("/data_files/Business Department/product_list.csv")
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parents[1]
 
-# CLEAN DATA OUTPUT — matches your docker volume:
-#   ./clean_data  →  /clean_data
-OUTPUT_DIR = Path("/clean_data/business")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
+INPUT_FILE = PROJECT_ROOT / "data_files" / "Business Department" / "product_list.csv"
+OUTPUT_DIR = PROJECT_ROOT / "clean_data" / "business"
 OUTPUT_CSV = OUTPUT_DIR / "product_list.csv"
 OUTPUT_PARQUET = OUTPUT_DIR / "product_list.parquet"
 BAD_ROWS_CSV = OUTPUT_DIR / "product_list_issues.csv"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ================== CONFIG ================== #
 
@@ -180,6 +177,7 @@ def main():
     print(clean_df.dtypes)
 
     # ---------- SAVE OUTPUTS ---------- #
+    # ---------- SAVE OUTPUTS ---------- #
     clean_df.to_csv(OUTPUT_CSV, index=False)
     clean_df.to_parquet(OUTPUT_PARQUET, index=False)
     bad_rows.to_csv(BAD_ROWS_CSV, index=False)
@@ -191,6 +189,7 @@ def main():
     print(f"Saved clean CSV to:      {OUTPUT_CSV}")
     print(f"Saved clean Parquet to:  {OUTPUT_PARQUET}")
     print(f"Saved issue rows to:     {BAD_ROWS_CSV}")
+
 
 
 if __name__ == "__main__":

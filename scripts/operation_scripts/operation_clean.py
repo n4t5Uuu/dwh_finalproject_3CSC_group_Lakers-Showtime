@@ -4,14 +4,24 @@ from pathlib import Path
 # ============================================================
 #                     PATH CONFIGURATION
 # ============================================================
-SCRIPT_DIR = Path(__file__).resolve().parent
+import pandas as pd
+from pathlib import Path
 
-RAW_DIR = Path("/data_files/Operations Department")
-OUT_DIR = Path("/clean_data/operations")
-ENTERPRISE_DIR = Path("/clean_data/enterprise")
-USER_DATA_CLEAN = Path("/clean_data/customer_management/user_data.csv")
+# ============================================================
+#                     PATH CONFIGURATION
+# ============================================================
+SCRIPT_DIR = Path(__file__).resolve().parent          # ...\scripts\operation_scripts
+PROJECT_ROOT = SCRIPT_DIR.parents[1]                  # ...\dwh_finalproject_3CSC_group_Lakers-Showtime
+USER_CANONICAL = PROJECT_ROOT / "clean_data" / "customer_management" / "user_canonical_keys.csv"
+
+
+RAW_DIR = PROJECT_ROOT / "data_files" / "Operations Department"
+OUT_DIR = PROJECT_ROOT / "clean_data" / "operations"
+ENTERPRISE_DIR = PROJECT_ROOT / "clean_data" / "enterprise"
+USER_DATA_CLEAN = PROJECT_ROOT / "clean_data" / "customer_management" / "user_data.csv"
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 
 # ============================================================
@@ -28,6 +38,7 @@ def to_date_key(dt: pd.Series) -> pd.Series:
 # ============================================================
 #                     RAW FILE LISTS
 # ============================================================
+
 ORDER_FILES = [
     "order_data_20200101-20200701.csv",
     "order_data_20200701-20211001.csv",
@@ -50,6 +61,7 @@ PRODUCT_FILES = [
 ]
 
 ORDER_DELAYS_FILE = RAW_DIR / "order_delays.csv"
+
 
 MERCHANT_STAFF_MAIN = ENTERPRISE_DIR / "order_with_merchant_data_all.csv"
 MERCHANT_STAFF_ISSUES = ENTERPRISE_DIR / "order_with_merchant_data_all_issues.csv"
@@ -223,19 +235,26 @@ def build_best_user_key_map(user_df):
     return best
 
 
-def assign_user_keys_to_orders(orders_df, user_df):
-    if orders_df.empty:
-        return orders_df
+def assign_user_keys_to_orders(orders_df):
+    if orders_df.empty or not USER_CANONICAL.exists():
+        orders = orders_df.copy()
+        orders["user_key"] = "U_UNKNOWN-0"
+        return orders
 
-    print("Building best user_key map (based on earliest creation_date)...")
-    best_map = build_best_user_key_map(user_df)
+    orders = orders_df.copy()
+    orders["user_id"] = orders["user_id"].astype(str).str.strip()
 
-    print("Merging user_key into orders using user_id...")
-    merged = orders_df.merge(best_map.rename("user_key"), on="user_id", how="left")
+    canonical = pd.read_csv(USER_CANONICAL)
+    canonical["user_id_orig"] = canonical["user_id_orig"].astype(str).str.strip()
 
+    user_map = canonical.rename(
+        columns={"user_id_orig": "user_id", "canonical_user_key": "user_key"}
+    )
+
+    merged = orders.merge(user_map[["user_id", "user_key"]],
+                          on="user_id", how="left")
     merged["user_key"] = merged["user_key"].fillna("U_UNKNOWN-0")
     return merged
-
 
 # ============================================================
 #                     SAVE HELPERS
@@ -247,7 +266,8 @@ def save_csv_parquet(df, name):
     df.to_csv(csv_path, index=False)
     df.to_parquet(parquet_path, index=False)
 
-    print(f"[OK] Saved {name} → {csv_path}")
+    print(f"[OK] Saved {name} - {csv_path}")
+
 
 
 # ============================================================
@@ -280,7 +300,8 @@ def main():
     if USER_DATA_CLEAN.exists():
         print("Loading user_data.csv for user_key mapping...")
         user_clean = pd.read_csv(USER_DATA_CLEAN)
-        orders_enhanced = assign_user_keys_to_orders(orders_final, user_clean)
+        orders_enhanced = assign_user_keys_to_orders(orders_final)
+
     else:
         print("[WARN] No user_data found — user_key defaults to UNKNOWN")
         orders_enhanced = orders_final.copy()
