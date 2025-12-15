@@ -7,7 +7,7 @@ from datetime import datetime
 # =====================================================
 
 with DAG(
-    dag_id="dag_dim_build_user",
+    dag_id="dag_build_dim_user",
     start_date=datetime(2025, 1, 1),
     schedule_interval=None,
     catchup=False,
@@ -112,6 +112,31 @@ with DAG(
                 ELSE FALSE
             END AS is_current
         FROM ordered_users;
+
+
+        -- =====================================================
+        -- INSERT UNKNOWN USER (SCD2 SAFETY ROW)
+        -- =====================================================
+
+        INSERT INTO shopzada.dim_user (
+            user_key,
+            user_id,
+            effective_from,
+            effective_to,
+            is_current
+        )
+        SELECT
+            0              AS user_key,
+            'UNKNOWN'      AS user_id,
+            DATE '1900-01-01' AS effective_from,
+            DATE '9999-12-31' AS effective_to,
+            FALSE          AS is_current
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM shopzada.dim_user
+            WHERE user_key = 0
+        );
+
         """
     )
 
