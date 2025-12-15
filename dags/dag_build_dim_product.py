@@ -7,7 +7,7 @@ from datetime import datetime
 # =====================================================
 
 with DAG(
-    dag_id="dag_dim_build_product",
+    dag_id="dag_build_dim_product",
     start_date=datetime(2025, 1, 1),
     schedule_interval=None,
     catchup=False,
