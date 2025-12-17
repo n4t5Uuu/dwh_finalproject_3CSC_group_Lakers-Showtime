@@ -43,7 +43,7 @@ def to_date_key(dt: pd.Series) -> pd.Series:
 def load_and_concat(files):
     if not files:
         raise FileNotFoundError(
-            "❌ No order_data_*.csv files found in Operations Department"
+            "No order_data_*.csv files found in Operations Department"
         )
 
     frames = []
@@ -72,7 +72,7 @@ def clean_orders(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     # Add date_key (allowed in cleaning)
-    df["transaction_date_key"] = to_date_key(df["transaction_date"])
+    df["date_key"] = to_date_key(df["transaction_date"])
 
     # Parse estimated arrival
     df["estimated_arrival_days"] = (
@@ -99,7 +99,7 @@ def split_clean_and_issues(df: pd.DataFrame):
         "order_id",
         "user_id",
         "transaction_date",
-        "transaction_date_key",
+        "date_key",
         "estimated_arrival_days",
     ]
 
@@ -113,8 +113,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
-
     issues_df.fillna("").to_csv(
         OUT_DIR / f"{name}_issues.csv", index=False
     )

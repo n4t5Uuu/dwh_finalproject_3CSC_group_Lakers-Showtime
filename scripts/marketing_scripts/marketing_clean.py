@@ -1,4 +1,4 @@
-# Cleaning Script for Marketing Department Tables
+# Cleaning Script for Marketing – Transactional Campaign + Campaign Data
 
 import re
 from pathlib import Path
@@ -14,12 +14,9 @@ TXN_CAMPAIGN_FILE = RAW_DIR / "transactional_campaign_data.csv"
 
 OUT_DIR = Path("/clean_data/marketing")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-# ================== CONFIG ================== #
 
 
-# ---------------------------------------------------
-#  HELPERS
-# ---------------------------------------------------
+# ================== CLEANING ================== #
 
 def to_date_key(dt: pd.Series) -> pd.Series:
     """
@@ -50,9 +47,6 @@ def clean_description(desc):
     return cleaned
 
 
-# ---------------------------------------------------
-# CAMPAIGN LOADER (Handles the weird format)
-# ---------------------------------------------------
 
 def load_campaign_data(path: Path) -> pd.DataFrame:
     df_raw = pd.read_csv(path, header=None)
@@ -87,9 +81,6 @@ def load_campaign_data(path: Path) -> pd.DataFrame:
     return df
 
 
-# ---------------------------------------------------
-# TRANSACTIONAL CAMPAIGN LOADER
-# ---------------------------------------------------
 
 def parse_estimated_arrival_days(text):
     if pd.isna(text):
@@ -107,10 +98,10 @@ def load_transactional_campaign_data(path: Path) -> pd.DataFrame:
     df["campaign_id"] = df["campaign_id"].astype(str)
     df["order_id"] = df["order_id"].astype(str)
 
-    # --- Parse transaction_date ---
+    # Parse transaction_date 
     df["transaction_date"] = pd.to_datetime(df["transaction_date"], errors="coerce")
 
-    # --- NEW: Add date key ---
+    # Add date key 
     df["transaction_date_key"] = to_date_key(df["transaction_date"])
 
     # Parse estimated arrival
@@ -129,7 +120,7 @@ def load_transactional_campaign_data(path: Path) -> pd.DataFrame:
 # ---------------------------------------------------
 
 def split_clean_and_issues(df, key_cols=None):
-    """Issues = NULL rows only (duplicate rule overridden earlier)."""
+    
     null_mask = df.isna().any(axis=1)
     issues_df = df.loc[null_mask].copy()
     clean_df = df.loc[~null_mask].copy()
@@ -138,11 +129,9 @@ def split_clean_and_issues(df, key_cols=None):
 
 def save_outputs(clean_df, issues_df, name):
     csv_path = OUT_DIR / f"{name}.csv"
-    parquet_path = OUT_DIR / f"{name}.parquet"
     issues_path = OUT_DIR / f"{name}_issues.csv"
 
     clean_df.to_csv(csv_path, index=False)
-    clean_df.to_parquet(parquet_path, index=False)
 
     issues_df = issues_df.copy().fillna("")
     issues_df.to_csv(issues_path, index=False)
@@ -150,20 +139,18 @@ def save_outputs(clean_df, issues_df, name):
     print(f"Saved {name}: clean={len(clean_df)}, issues={len(issues_df)}")
 
 
-# ---------------------------------------------------
-# MAIN
-# ---------------------------------------------------
+
 
 def main():
     print("\n=== Processing Marketing Department ===\n")
 
-    # ---------------- CAMPAIGN DATA ----------------
+    # CAMPAIGN DATA
     print("Loading campaign_data.csv ...")
     campaigns = load_campaign_data(CAMPAIGN_FILE)
     campaigns_clean, campaigns_issues = split_clean_and_issues(campaigns)
     save_outputs(campaigns_clean, campaigns_issues, "campaign_data")
 
-    # ---------------- TRANSACTIONAL CAMPAIGN DATA ----------------
+    # TRANSACTIONAL CAMPAIGN DATA
     print("Loading transactional_campaign_data.csv ...")
     txn_df = load_transactional_campaign_data(TXN_CAMPAIGN_FILE)
     txn_clean, txn_issues = split_clean_and_issues(
@@ -171,7 +158,7 @@ def main():
     )
     save_outputs(txn_clean, txn_issues, "transactional_campaign_data")
 
-    print("\nMarketing ingestion complete ✅\n")
+    print("\nMarketing ingestion complete \n")
 
 
 if __name__ == "__main__":

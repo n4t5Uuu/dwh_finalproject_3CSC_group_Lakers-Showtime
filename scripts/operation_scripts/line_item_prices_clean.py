@@ -72,7 +72,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
 
     issues_df.fillna("").to_csv(
         OUT_DIR / f"{name}_issues.csv", index=False

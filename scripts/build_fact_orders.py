@@ -36,7 +36,7 @@ def ensure_transaction_date(df):
         if col in df.columns:
             df = df.rename(columns={col: "transaction_date"})
             return df
-    raise ValueError("❌ No usable transaction date column found in orders_final_ready.csv")
+    raise ValueError(" No usable transaction date column found in orders_final_ready.csv")
 
 
 def make_date_key(df, colname):

@@ -1,5 +1,4 @@
 # Cleaning Script for Business Department – Product List
-# Kimball-compliant: cleaning only, no surrogate keys
 
 import pandas as pd
 from pathlib import Path
@@ -36,9 +35,7 @@ def main():
     # Price must be numeric
     df["price_numeric"] = pd.to_numeric(df["price"], errors="coerce")
 
-    # -----------------------------
     # Identify issue rows
-    # -----------------------------
     null_mask = df[["product_id", "product_name", "product_type", "price"]].isna().any(axis=1)
     invalid_price_mask = df["price_numeric"].isna()
     
@@ -65,7 +62,7 @@ def main():
     clean.to_csv(CLEAN_CSV, index=False)
     issues.drop(columns=["price_numeric"], errors="ignore").to_csv(ISSUES_CSV, index=False)
 
-    print("Business product cleaning complete ✅")
+    print("Business product cleaning complete")
     print(f"Total rows: {len(df):,}")
     print(f"Clean rows: {len(clean):,}")
     print(f"Issue rows: {len(issues):,}")

@@ -1,15 +1,12 @@
 import os
 from pathlib import Path
 
-# ============================================================
-#              AUTO-CREATE DWH CLEAN DATA DIRECTORIES
-# ============================================================
+
 
 def main():
 
-    # Paths inside Airflow container (mounted via docker-compose)
-    BASE = Path("/clean_data")
 
+    BASE = Path("/clean_data")
     dept_folders = [
         "business",
         "customer_management",

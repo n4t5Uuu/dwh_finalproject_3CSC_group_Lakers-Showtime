@@ -98,10 +98,6 @@ with DAG(
         AND TO_DATE(tc.date_key::text, 'YYYYMMDD')
             BETWEEN ds.effective_from
                 AND COALESCE(ds.effective_to, DATE '9999-12-31')
-
-
-
-
         """
     )
 

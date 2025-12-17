@@ -1,26 +1,19 @@
-# ============================================================
-# Cleaning Script — Enterprise / Merchant
-# Purpose: Prepare merchant data for SCD Type 2 dimension
-# Layer: Cleaning (NO surrogate keys, NO SCD logic)
-# ============================================================
+
+# Cleaning Script for Enterprise – Merchant Data
 
 import pandas as pd
 from pathlib import Path
 import re
 
-# ============================================================
-# CONFIG
-# ============================================================
 
+# ================== CONFIG ================== #
 RAW_DIR = Path("/data_files/Enterprise Department")
 OUT_DIR = Path("/clean_data/enterprise")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MERCHANT_FILE = RAW_DIR / "merchant_data.csv"
 
-# ============================================================
-# HELPERS
-# ============================================================
+# ================== CLEANING ================== #
 
 def to_date_key(dt: pd.Series) -> pd.Series:
     """Convert datetime series to int YYYYMMDD."""
@@ -69,7 +62,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
     issues_df.fillna("").to_csv(OUT_DIR / f"{name}_issues.csv", index=False)
 
     print(f"[OK] {name}: Clean={len(clean_df):,}, Issues={len(issues_df):,}")
@@ -99,21 +91,17 @@ def load_and_clean_merchant(path: Path) -> pd.DataFrame:
     if "contact_number" in df.columns:
         df["contact_number"] = df["contact_number"].apply(normalize_phone)
 
-    # Parse creation date (SCD anchor)
+    # Parse creation date 
     df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
     df["merchant_creation_date_key"] = to_date_key(df["creation_date"])
 
-    # Country normalization (same rationale as staff)
+    # Country normalization 
     df["country"] = "United States"
 
     # Sort for downstream SCD logic
     df = df.sort_values(["merchant_id", "creation_date"])
 
     return df
-
-# ============================================================
-# MAIN
-# ============================================================
 
 def main():
     print("\n=== Cleaning Enterprise Merchant Data (SCD-Ready) ===\n")

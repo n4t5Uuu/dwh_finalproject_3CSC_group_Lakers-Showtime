@@ -124,8 +124,8 @@ def join_price_and_product(price_df: pd.DataFrame, product_df: pd.DataFrame) -> 
 # ============================================================
 
 def save_clean_line_items(df: pd.DataFrame) -> None:
-    out_path = CLEAN_PATH / "line_item_data_clean.parquet"
-    df.to_parquet(out_path, index=False)
+    out_path = CLEAN_PATH / "line_item_data_clean.csv"
+    df.to_csv(out_path, index=False)
     print(f"[OK] Saved cleaned and joined line item data → {out_path}")
 
 

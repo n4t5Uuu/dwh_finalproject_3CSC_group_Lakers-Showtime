@@ -1,16 +1,10 @@
-# ============================================================
-# Cleaning Script — Marketing / Campaign
-# Purpose: Prepare campaign data for Type 1 dimension
-# Layer: Cleaning (NO surrogate keys, NO SCD logic)
-# ============================================================
+# Cleaning Script for Marketing – Campaign Data
 
 import re
 from pathlib import Path
 import pandas as pd
 
-# ============================================================
-# CONFIG
-# ============================================================
+# ================== CONFIG ================== #
 
 RAW_DIR = Path("/data_files/Marketing Department")
 OUT_DIR = Path("/clean_data/marketing")
@@ -18,9 +12,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 CAMPAIGN_FILE = RAW_DIR / "campaign_data.csv"
 
-# ============================================================
-# HELPERS
-# ============================================================
+# ================== CLEANING ================== #
 
 def normalize_discount(val):
     """
@@ -91,7 +83,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
     issues_df.fillna("").to_csv(OUT_DIR / f"{name}_issues.csv", index=False)
 
     print(f"[OK] {name}: Clean={len(clean_df):,}, Issues={len(issues_df):,}")
