@@ -6,12 +6,13 @@ from pathlib import Path
 # ================== CONFIG ================== #
 
 INPUT_FILE = Path("/data_files/Business Department/product_list.csv")
-OUTPUT_DIR = Path("/clean_data/business")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+# Automatically create output directory if it doesn't exist
+BASE_DIR = Path("/clean_data")
+OUT_DIR = BASE_DIR / "business"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-CLEAN_CSV = OUTPUT_DIR / "product_list_clean.csv"
-ISSUES_CSV = OUTPUT_DIR / "product_list_issues.csv"
-
+CLEAN_CSV = OUT_DIR / "product_list_clean.csv"
+ISSUES_CSV = OUT_DIR / "product_list_issues.csv"
 # ================== CLEANING ================== #
 
 def main():

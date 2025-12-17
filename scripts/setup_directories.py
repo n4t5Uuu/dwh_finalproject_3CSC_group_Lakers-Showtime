@@ -1,10 +1,7 @@
 import os
 from pathlib import Path
 
-
-
 def main():
-
 
     BASE = Path("/clean_data")
     dept_folders = [
@@ -13,11 +10,8 @@ def main():
         "enterprise",
         "marketing",
         "operations",
-        "facts",
-        "dimensions",
+        "facts"
     ]
-
-    print("\n[SETUP] Ensuring clean_data folder structure exists...\n")
 
     # Create base folder
     BASE.mkdir(parents=True, exist_ok=True)
@@ -27,9 +21,9 @@ def main():
         path = BASE / folder
         path.mkdir(parents=True, exist_ok=True)
 
-        print(f"[OK] Folder exists/created: {path}")
+        print(f"Folder exists/created: {path}")
 
-    print("\n[SETUP COMPLETE] Directory structure ready.\n")
+    print("\nDirectory structure ready.\n")
 
 
 if __name__ == "__main__":

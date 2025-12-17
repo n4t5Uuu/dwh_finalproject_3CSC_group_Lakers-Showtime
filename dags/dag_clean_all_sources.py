@@ -3,14 +3,10 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime
 import sys
 
-# =====================================================
-# PATH SETUP
-# =====================================================
 sys.path.append("/scripts")
 
-# =====================================================
-# IMPORT CLEANING FUNCTIONS
-# =====================================================
+# DIRECTORY SETUP
+from setup_directories import main as setup_directories
 
 # BUSINESS
 from business_scripts.business_clean import main as clean_business
@@ -33,9 +29,6 @@ from enterprise_scripts.order_with_merchant_clean import main as clean_order_wit
 from enterprise_scripts.merchant_clean import main as clean_merchant
 from enterprise_scripts.staff_clean import main as clean_staff
 
-# =====================================================
-# DAG DEFINITION
-# =====================================================
 
 with DAG(
     dag_id="dag_clean_all_sources",
@@ -45,27 +38,26 @@ with DAG(
     tags=["dwh", "cleaning", "kimball"],
 ) as dag:
 
-    # =================================================
-    # BUSINESS CLEANING
-    # =================================================
+    # setup_directories_task = PythonOperator(
+    #     task_id="setup_directories",
+    #     python_callable=setup_directories,
+    # )
 
+    # BUSINESS CLEANING
     clean_business_task = PythonOperator(
         task_id="clean_business",
         python_callable=clean_business,
     )
 
-    # =================================================
-    # CUSTOMER MANAGEMENT CLEANING
-    # =================================================
 
+    # CUSTOMER MANAGEMENT CLEANING
     clean_customer_task = PythonOperator(
         task_id="clean_customer_management",
         python_callable=clean_customer,
     )
-    # =================================================
-    # OPERATIONS CLEANING
-    # =================================================
 
+
+    # OPERATIONS CLEANING
     clean_orders_task = PythonOperator(
         task_id="clean_orders",
         python_callable=clean_orders,
@@ -86,10 +78,8 @@ with DAG(
         python_callable=clean_order_delays,
     )
 
-    # =================================================
-    # MARKETING CLEANING
-    # =================================================
 
+    # MARKETING CLEANING
     clean_transactional_campaign_task = PythonOperator(
         task_id="clean_transactional_campaign",
         python_callable=clean_transactional_campaign,
@@ -99,10 +89,8 @@ with DAG(
         python_callable=clean_campaign,
     )
 
-    # =================================================
-    # ENTERPRISE CLEANING
-    # =================================================
 
+    # ENTERPRISE CLEANING
     clean_order_with_merchant_task = PythonOperator(
         task_id="clean_order_with_merchant",
         python_callable=clean_order_with_merchant,
@@ -116,10 +104,11 @@ with DAG(
         python_callable=clean_staff,
     )
 
-    # =================================================
+
     # TASK DEPENDENCIES
-    # =================================================
-    clean_business_task >> clean_customer_task
+    # setup_directories >> clean_business_task
+    clean_business_task >>  clean_customer_task
+    
     clean_customer_task >> [
         clean_orders_task,
         clean_line_item_products_task,
@@ -128,8 +117,8 @@ with DAG(
         clean_transactional_campaign_task,
         clean_campaign_task,
         clean_order_with_merchant_task,
+        clean_merchant_task
     ]
-    clean_order_with_merchant_task >> clean_merchant_task,
 
 
 

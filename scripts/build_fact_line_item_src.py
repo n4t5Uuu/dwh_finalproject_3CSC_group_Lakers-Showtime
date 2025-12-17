@@ -1,7 +1,7 @@
-# ============================================================
+
+
 # FACT SOURCE BUILDER — fact_line_item_src
 # Grain: order × product (row-aligned)
-# ============================================================
 
 import pandas as pd
 import re

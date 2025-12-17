@@ -8,7 +8,9 @@ from pathlib import Path
 # ================== CONFIG ================== #
 
 RAW_DIR = Path("/data_files/Customer Management Department")
-OUT_DIR = Path("/clean_data/customer_management")
+# Automatically create output directory if it doesn't exist
+BASE_DIR = Path("/clean_data")
+OUT_DIR = BASE_DIR / "customer_management"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 USER_DATA_FILE = RAW_DIR / "user_data.csv"

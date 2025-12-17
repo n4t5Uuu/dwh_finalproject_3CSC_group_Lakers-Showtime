@@ -43,13 +43,14 @@ with DAG(
     tags=["dwh", "staging", "kimball"],
 ) as dag:
 
+    # CREATE STAGING TABLES
     create_all_staging_tables = PostgresOperator(
         task_id="create_all_staging_tables",
         postgres_conn_id="postgres_default",
         sql="/create_all_staging_tables.sql",
     )
 
-
+    # LOAD USER DATA
     customer_management_load = PythonOperator(
         task_id="load_staging_user_data_all",
         python_callable=load_csv_to_staging,
@@ -78,7 +79,7 @@ with DAG(
 
 
 
-
+    # LOAD CAMPAIGN DATA
     campaign_load = PythonOperator(
         task_id="load_staging_campaign",
         python_callable=load_csv_to_staging,
@@ -95,7 +96,7 @@ with DAG(
     )
 
 
-
+    # LOAD PRODUCT LIST
     product_load = PythonOperator(
         task_id="load_staging_product_list",
         python_callable=load_csv_to_staging,
@@ -112,7 +113,7 @@ with DAG(
     )
 
 
-
+    # LOAD STAFF DATA
     staff_load = PythonOperator(
         task_id="load_staging_staff",
         python_callable=load_csv_to_staging,
@@ -135,7 +136,7 @@ with DAG(
     )
 
 
-
+    # LOAD MERCHANT DATA
     merchant_load = PythonOperator(
         task_id="load_staging_merchant",
         python_callable=load_csv_to_staging,
@@ -157,7 +158,7 @@ with DAG(
     )
 
 
-
+    # LOAD TRANSACTIONAL CAMPAIGN DATA
     transactional_campaign_load = PythonOperator(
     task_id="load_staging_transactional_campaign_clean",
     python_callable=load_csv_to_staging,
@@ -175,10 +176,7 @@ with DAG(
     },
 )
 
-
-
-
-
+    # LOAD ORDERS DATA
     orders_load = PythonOperator(
         task_id="load_staging_orders_clean",
         python_callable=load_csv_to_staging,
@@ -195,6 +193,7 @@ with DAG(
         },
     )
 
+    # LOAD ORDER DELAYS DATA
     order_delays_load = PythonOperator(
         task_id="load_staging_order_delays_clean",
         python_callable=load_csv_to_staging,
@@ -208,10 +207,7 @@ with DAG(
         },
     )
 
-
-
-
-
+    # LOAD ENTERPRISE ORDER WITH MERCHANT DATA
     enterprise_order_merchant_load = PythonOperator(
         task_id="load_staging_order_with_merchant_clean",
         python_callable=load_csv_to_staging,
@@ -226,14 +222,13 @@ with DAG(
         },
     )
 
+    # BUILD FACT LINE ITEM SRC
     fact_line_item_src_build = PythonOperator(
         task_id="build_fact_line_item_src",
         python_callable=build_fact_line_item_src,
     )
 
-
-
-
+    # LOAD FACT LINE ITEM SRC
     fact_line_item_src_load = PythonOperator(
         task_id="load_staging_fact_line_item_src",
         python_callable=load_csv_to_staging,
@@ -257,9 +252,10 @@ with DAG(
     )
 
 
-
+    # DEPENDENCIES
     create_all_staging_tables >> [customer_management_load, campaign_load, product_load, 
-                                  staff_load, merchant_load, transactional_campaign_load, enterprise_order_merchant_load, 
+                                  staff_load, merchant_load, transactional_campaign_load, 
+                                  enterprise_order_merchant_load, 
                                   orders_load, order_delays_load
                                   ]
     fact_line_item_src_build >> fact_line_item_src_load

@@ -10,9 +10,7 @@ with DAG(
     tags=["dwh", "fact", "campaign"],
 ) as dag:
 
-    # -----------------------------------
-    # 1. CREATE FACT TABLE
-    # -----------------------------------
+
     create_fact_campaign = PostgresOperator(
         task_id="create_fact_campaign_availed",
         postgres_conn_id="postgres_default",
@@ -38,9 +36,6 @@ with DAG(
         """
     )
 
-    # -----------------------------------
-    # 2. LOAD FACT TABLE
-    # -----------------------------------
     load_fact_campaign = PostgresOperator(
         task_id="load_fact_campaign_availed",
         postgres_conn_id="postgres_default",
@@ -68,36 +63,83 @@ with DAG(
             dc.discount_pct
         FROM staging.transactional_campaign_clean tc
 
-        -- CAMPAIGN DIM (Type 1)
+        -- CAMPAIGN DIM 
         LEFT JOIN shopzada.dim_campaign dc
             ON tc.campaign_id = dc.campaign_id
 
-        -- ORDER → USER
+        -- ORDER -> USER
         LEFT JOIN staging.orders_clean o
             ON tc.order_id = o.order_id
 
-        LEFT JOIN shopzada.dim_user du
-            ON o.user_id = du.user_id
-        AND TO_DATE(tc.date_key::text, 'YYYYMMDD')
-            BETWEEN du.effective_from
-                AND COALESCE(du.effective_to, DATE '9999-12-31')
+        LEFT JOIN LATERAL (
+            SELECT du.user_key
+            FROM shopzada.dim_user du
+            WHERE du.user_id = o.user_id
+            AND (
+                    -- normal SCD2 match
+                    TO_DATE(tc.date_key::text, 'YYYYMMDD')
+                        BETWEEN du.effective_from
+                            AND COALESCE(du.effective_to, DATE '9999-12-31')
+
+                    -- fallback: transaction before first version
+                OR TO_DATE(tc.date_key::text, 'YYYYMMDD') <
+                    (
+                        SELECT MIN(effective_from)
+                        FROM shopzada.dim_user
+                        WHERE user_id = o.user_id
+                    )
+            )
+            ORDER BY du.effective_from
+            LIMIT 1
+        ) du ON TRUE
 
 
-        -- ORDER → MERCHANT / STAFF
+
+        -- ORDER -> MERCHANT / STAFF
         LEFT JOIN staging.order_with_merchant_clean om
             ON tc.order_id = om.order_id
 
-        LEFT JOIN shopzada.dim_merchant dm
-        ON om.merchant_id = dm.merchant_id
-        AND TO_DATE(tc.date_key::text, 'YYYYMMDD')
-            BETWEEN dm.effective_from
-                AND COALESCE(dm.effective_to, DATE '9999-12-31')
+        LEFT JOIN LATERAL (
+            SELECT dm.merchant_key
+            FROM shopzada.dim_merchant dm
+            WHERE dm.merchant_id = om.merchant_id
+            AND (
+                    TO_DATE(tc.date_key::text, 'YYYYMMDD')
+                        BETWEEN dm.effective_from
+                            AND COALESCE(dm.effective_to, DATE '9999-12-31')
 
-        LEFT JOIN shopzada.dim_staff ds
-        ON om.staff_id = ds.staff_id
-        AND TO_DATE(tc.date_key::text, 'YYYYMMDD')
-            BETWEEN ds.effective_from
-                AND COALESCE(ds.effective_to, DATE '9999-12-31')
+                OR TO_DATE(tc.date_key::text, 'YYYYMMDD') <
+                    (
+                        SELECT MIN(effective_from)
+                        FROM shopzada.dim_merchant
+                        WHERE merchant_id = om.merchant_id
+                    )
+            )
+            ORDER BY dm.effective_from
+            LIMIT 1
+        ) dm ON TRUE
+
+
+        LEFT JOIN LATERAL (
+            SELECT ds.staff_key
+            FROM shopzada.dim_staff ds
+            WHERE ds.staff_id = om.staff_id
+            AND (
+                    TO_DATE(tc.date_key::text, 'YYYYMMDD')
+                        BETWEEN ds.effective_from
+                            AND COALESCE(ds.effective_to, DATE '9999-12-31')
+
+                OR TO_DATE(tc.date_key::text, 'YYYYMMDD') <
+                    (
+                        SELECT MIN(effective_from)
+                        FROM shopzada.dim_staff
+                        WHERE staff_id = om.staff_id
+                    )
+            )
+            ORDER BY ds.effective_from
+            LIMIT 1
+        ) ds ON TRUE
+
         """
     )
 

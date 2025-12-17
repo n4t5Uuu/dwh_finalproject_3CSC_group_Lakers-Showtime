@@ -2,9 +2,6 @@ from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from datetime import datetime
 
-# =====================================================
-# DAG DEFINITION
-# =====================================================
 
 with DAG(
     dag_id="dag_build_fact_line_item",
@@ -14,9 +11,7 @@ with DAG(
     tags=["dwh", "fact", "line_item"],
 ) as dag:
 
-    # -------------------------------------------------
-    # CREATE FACT TABLE (ONCE)
-    # -------------------------------------------------
+
     create_fact_table = PostgresOperator(
         task_id="create_fact_line_item",
         postgres_conn_id="postgres_default",
@@ -84,33 +79,75 @@ with DAG(
         FROM staging.fact_line_item_src src
 
         -- ---------------- USER SCD2 JOIN ----------------
-        LEFT JOIN shopzada.dim_user u
-        ON src.user_id = u.user_id
-        AND src.date_key >= TO_CHAR(u.effective_from, 'YYYYMMDD')::INT
-        AND (
-            u.effective_to IS NULL
-            OR src.date_key <= TO_CHAR(u.effective_to, 'YYYYMMDD')::INT
-        )
+        LEFT JOIN LATERAL (
+            SELECT u.user_key
+            FROM shopzada.dim_user u
+            WHERE u.user_id = src.user_id
+            AND (
+                    src.date_key >= TO_CHAR(u.effective_from, 'YYYYMMDD')::INT
+                AND (
+                        u.effective_to IS NULL
+                    OR src.date_key <= TO_CHAR(u.effective_to, 'YYYYMMDD')::INT
+                    )
+                OR
+                    src.date_key < (
+                        SELECT MIN(TO_CHAR(effective_from, 'YYYYMMDD')::INT)
+                        FROM shopzada.dim_user
+                        WHERE user_id = src.user_id
+                    )
+            )
+            ORDER BY u.effective_from
+            LIMIT 1
+        ) u ON TRUE
+
 
 
         -- ---------------- MERCHANT SCD2 JOIN ----------------
-        LEFT JOIN shopzada.dim_merchant m
-        ON src.merchant_id = m.merchant_id
-        AND src.date_key >= TO_CHAR(m.effective_from, 'YYYYMMDD')::INT
-        AND (
-            m.effective_to IS NULL
-            OR src.date_key <= TO_CHAR(m.effective_to, 'YYYYMMDD')::INT
-        )
+        LEFT JOIN LATERAL (
+            SELECT m.merchant_key
+            FROM shopzada.dim_merchant m
+            WHERE m.merchant_id = src.merchant_id
+            AND (
+                    src.date_key >= TO_CHAR(m.effective_from, 'YYYYMMDD')::INT
+                AND (
+                        m.effective_to IS NULL
+                    OR src.date_key <= TO_CHAR(m.effective_to, 'YYYYMMDD')::INT
+                    )
+                OR
+                    src.date_key < (
+                        SELECT MIN(TO_CHAR(effective_from, 'YYYYMMDD')::INT)
+                        FROM shopzada.dim_merchant
+                        WHERE merchant_id = src.merchant_id
+                    )
+            )
+            ORDER BY m.effective_from
+            LIMIT 1
+        ) m ON TRUE
+
     
 
         -- ---------------- STAFF SCD2 JOIN ----------------
-        LEFT JOIN shopzada.dim_staff s
-        ON src.staff_id = s.staff_id
-        AND src.date_key >= TO_CHAR(s.effective_from, 'YYYYMMDD')::INT
-        AND (
-            s.effective_to IS NULL
-            OR src.date_key <= TO_CHAR(s.effective_to, 'YYYYMMDD')::INT
-        )
+        LEFT JOIN LATERAL (
+            SELECT s.staff_key
+            FROM shopzada.dim_staff s
+            WHERE s.staff_id = src.staff_id
+            AND (
+                    src.date_key >= TO_CHAR(s.effective_from, 'YYYYMMDD')::INT
+                AND (
+                        s.effective_to IS NULL
+                    OR src.date_key <= TO_CHAR(s.effective_to, 'YYYYMMDD')::INT
+                    )
+                OR
+                    src.date_key < (
+                        SELECT MIN(TO_CHAR(effective_from, 'YYYYMMDD')::INT)
+                        FROM shopzada.dim_staff
+                        WHERE staff_id = src.staff_id
+                    )
+            )
+            ORDER BY s.effective_from
+            LIMIT 1
+        ) s ON TRUE
+
 
 
         -- ---------------- PRODUCT DIM ----------------

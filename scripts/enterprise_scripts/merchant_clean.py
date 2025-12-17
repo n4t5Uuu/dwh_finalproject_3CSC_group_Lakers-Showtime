@@ -8,7 +8,10 @@ import re
 
 # ================== CONFIG ================== #
 RAW_DIR = Path("/data_files/Enterprise Department")
-OUT_DIR = Path("/clean_data/enterprise")
+
+# Automatically create output directory if it doesn't exist
+BASE_DIR = Path("/clean_data")
+OUT_DIR = BASE_DIR / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MERCHANT_FILE = RAW_DIR / "merchant_data.csv"
@@ -49,14 +52,8 @@ def clean_merchant_name(name: str) -> str:
 
 
 def split_clean_and_issues(df: pd.DataFrame):
-    """
-    Merchant is SCD Type 2.
-    Duplicates by merchant_id are VALID.
-    Only critical nulls are issues.
-    """
     required_cols = ["merchant_id", "creation_date", "name"]
     issue_mask = df[required_cols].isna().any(axis=1)
-
     return df[~issue_mask].copy(), df[issue_mask].copy()
 
 
@@ -76,13 +73,6 @@ def load_and_clean_merchant(path: Path) -> pd.DataFrame:
     # Drop pandas index artifact
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
-
-    # Normalize business key
-    df["merchant_id"] = (
-        df["merchant_id"]
-        .astype(str)
-        .apply(lambda x: normalize_business_id(x, "MERCHANT"))
-    )
 
     # Clean merchant name
     df["name"] = df["name"].apply(clean_merchant_name)
@@ -104,14 +94,12 @@ def load_and_clean_merchant(path: Path) -> pd.DataFrame:
     return df
 
 def main():
-    print("\n=== Cleaning Enterprise Merchant Data (SCD-Ready) ===\n")
+
 
     merchant_df = load_and_clean_merchant(MERCHANT_FILE)
     merchant_clean, merchant_issues = split_clean_and_issues(merchant_df)
-
     save_outputs(merchant_clean, merchant_issues, "merchant_data")
-
-    print("Merchant cleaning completed ✓")
+    print("Merchant cleaning completed")
 
 
 if __name__ == "__main__":

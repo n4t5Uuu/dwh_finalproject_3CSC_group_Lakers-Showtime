@@ -6,11 +6,15 @@ from pathlib import Path
 # ================== CONFIG ================== #
 
 RAW_DIR = Path("/data_files/Enterprise Department")
-OUT_DIR = Path("/clean_data/enterprise")
+# Automatically create output directory if it doesn't exist
+BASE_DIR = Path("/clean_data")
+BASE_DIR.mkdir(parents=True, exist_ok=True)
+OUT_DIR = BASE_DIR / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 ORDER_MERCHANT_FILES = sorted(
     RAW_DIR.glob("order_with_merchant_data*.csv")
+
 )
 
 # ================== CLEANING ================== #
