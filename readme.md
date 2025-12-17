@@ -11,7 +11,6 @@ Make sure the following are installed on your system:
 - Git
 - Any web browser to access Airflow and PostgreSQL.
 
-  
 
 ---
 
@@ -24,13 +23,15 @@ git  clone <repository-url>
 cd <project-root>
 ```
 
+---
+
 ### 2. Start the Environment
 
 ```bash
 cd  infra
 docker compose up -d
 ```
-
+---
   
 
 ### 3. Access Airflow
@@ -43,10 +44,11 @@ http:localhost:8999 # Airflow
 username = admin
 password = admin
 ```
-Once logged in, unpause all DAGs and run **"dag_master_shopzada_pipeline.py"**
+Once logged in, un-pause all DAGs and run **"dag_master_shopzada_pipeline.py"**. This whole dag might take a while to finish (around 7 minutes). 
 
+**BE AWARE THAT THE SCRIPTS WILL CREATE MANY ".csv" FILES UNDER THE "clean_data" FOLDER AND WILL  CONSUME AROUND 500MB OF STORAGE**
 
-### 4. Access PostgreSQL (Optional)
+### (Optional) Access PostgreSQL 
 You can access PostgreSQL in order to check the staging, dimensions, and fact tables.
 ```bash
 http:localhost:5050 # PostgreSQL
@@ -54,12 +56,12 @@ http:localhost:5050 # PostgreSQL
 # Login Credentials
 username = admin@admin.com
 password = admin
-
-# After logging in, right click "Servers" under "Object Explorer" in the left-hand panel.
-# Left click "Register a Server"
-# Server Credentials
+```
+After logging in, right click **"Servers"** under "Object Explorer" in the left-hand panel. Then, left click **"Register a Server"**. A window will appear and you can input the following: 
+```bash
 General Tab:
-- Name = shopzada
+- Name 					= shopzada
+
 Connection Tab:
 - Hostname 				= postgres
 - Port 					= 5432
@@ -67,3 +69,4 @@ Connection Tab:
 - Username 				= airflow
 - Password 				= airflow
 ```
+Once done, you can check the dimensions and fact tables under the "shopzada" schema. The staging tables are located under the "staging" schema.
