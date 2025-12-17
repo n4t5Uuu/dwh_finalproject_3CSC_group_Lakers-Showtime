@@ -39,7 +39,6 @@ with DAG(
     template_searchpath=["/sql"],
     schedule_interval=None,
     catchup=False,
-    
     tags=["dwh", "staging", "kimball"],
 ) as dag:
 

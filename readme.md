@@ -58,7 +58,7 @@ password = admin
 # After logging in, right click "Servers" under "Object Explorer" in the left-hand panel.
 # Left click "Register a Server"
 # Server Credentials
-General Tab;
+General Tab:
 - Name = shopzada
 Connection Tab:
 - Hostname 				= postgres

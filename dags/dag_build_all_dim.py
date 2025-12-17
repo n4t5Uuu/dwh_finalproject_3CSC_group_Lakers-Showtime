@@ -9,7 +9,6 @@ with DAG(
     schedule_interval=None,
     catchup=False,
     tags=["dwh", "dimensions", "kimball"],
-    # deferrable=True,
 ) as dag:
     
     create_schema_shopzada = PostgresOperator(
