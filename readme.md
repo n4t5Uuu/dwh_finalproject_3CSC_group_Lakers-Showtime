@@ -94,5 +94,11 @@ Once done, you can check the dimensions and fact tables under the "shopzada" sch
 
 ### 4. View Dashboard via Power BI
 
-Navigate to **"dashboard"** folder and open the **"Analytics"** file. 
-This will open Power BI, showing the Executive Dashboard, Campaign, Orders, Merchant and Staff, and Users.
+Navigate to the **"dashboard"** folder. 
+
+Right-click the **"analytics_dashboard.pbix"** file and press **"Reveal in File Explorer"**
+This will open the file explorer, where you can **open the "analytics_dashboard.pbix" file using Power BI**. 
+
+Opening the analytics dashboard displays data organized into tabs: Executive Dashboard, Campaign, Orders, Merchant and Staff, and Users.
+
+---
