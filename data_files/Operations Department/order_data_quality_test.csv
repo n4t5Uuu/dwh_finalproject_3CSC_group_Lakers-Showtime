@@ -1,0 +1,6 @@
+order_id,user_id,estimated arrival,transaction_date
+ORD_VALID_1,USER36943,5days,2024-03-01
+ORD_BAD_DATE,USER1002,3days,not-a-date
+ORD_MISSING_USER,,7days,2024-03-02
+ORD_VALID_2,USER36943,10days,2024-03-03
+ORD_LATE_USER,USER_LATE,7days,2024-03-09

@@ -1,0 +1,6 @@
+,order_id,price,quantity
+0,ORD_VALID_1,12.81,6px
+1,ORD_BAD_DATE,14.0,6pieces
+2,ORD_MISSING_USER,6.78,4pcs
+3,ORD_VALID_2,8.72,4px
+4,ORD_LATE_USER,12.81,12px

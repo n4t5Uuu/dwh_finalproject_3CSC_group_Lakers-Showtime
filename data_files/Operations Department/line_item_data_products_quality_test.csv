@@ -1,0 +1,7 @@
+,order_id,product_name,product_id
+0,ORD_VALID_1,Grandmas swedish thin pancakes,PRODUCT16794
+1,ORD_BAD_DATE,Blackberry breakfast bars,PRODUCT56387
+2,ORD_MISSING_USER,Moms cheat doughnuts,PRODUCT26612
+3,ORD_VALID_2,Baked swiss cheese omelet,PRODUCT17344
+7,ORD_LATE_USER,Baked swiss cheese omelet,PRODUCT17344
+5,ORD_LATE_USER,Grandmas swedish thin pancakes,PRODUCT16794
