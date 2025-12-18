@@ -461,22 +461,25 @@ with DAG(
             task_id="create_fact_orders",
             postgres_conn_id="postgres_default",
             sql="""
-            CREATE SCHEMA IF NOT EXISTS shopzada;
+                CREATE TABLE IF NOT EXISTS shopzada.fact_orders (
+                    fact_orders_key BIGSERIAL PRIMARY KEY,
 
-            CREATE TABLE IF NOT EXISTS shopzada.fact_orders (
-                fact_orders_key BIGSERIAL PRIMARY KEY,
+                    order_id VARCHAR(100) NOT NULL,
 
-                order_id VARCHAR(100) NOT NULL,
+                    user_key INT NOT NULL,
+                    merchant_key INT NOT NULL DEFAULT 0,
+                    staff_key INT NOT NULL DEFAULT 0,
+                    date_key INT NOT NULL,
 
-                user_key INT NOT NULL,
-                merchant_key INT NOT NULL DEFAULT 0,
-                staff_key INT NOT NULL DEFAULT 0,
-                date_key INT NOT NULL,
+                    order_amount NUMERIC(14,2) NOT NULL,
+                    estimated_arrival_days INT,
+                    delay_in_days INT,
 
-                order_amount NUMERIC(14,2) NOT NULL,
-                estimated_arrival_days INT,
-                delay_in_days INT
-            );
+                    campaign_key INT NOT NULL DEFAULT -1,   -- -1 = no campaign
+                    availed_flag INT NOT NULL DEFAULT 0,    -- 0/1
+                    discount_pct INT,
+                    discount_amount NUMERIC(14,2)
+                );
             """
         )
 
@@ -495,7 +498,11 @@ with DAG(
                 date_key,
                 order_amount,
                 estimated_arrival_days,
-                delay_in_days
+                delay_in_days,
+                campaign_key,
+                availed_flag,
+                discount_pct,
+                discount_amount
             )
             SELECT
                 li.order_id,
@@ -508,15 +515,44 @@ with DAG(
                 SUM(li.line_amount) AS order_amount,
 
                 o.estimated_arrival_days,
-                d.delay_in_days
+                d.delay_in_days,
+
+                -- CAMPAIGN FIELDS
+                CASE
+                    WHEN NULLIF(NULLIF(tc.campaign_id, ''), 'NaN') IS NULL
+                        THEN -1
+                    ELSE COALESCE(dc.campaign_key, 0)
+                END AS campaign_key,
+
+                COALESCE(tc.availed, 0) AS availed_flag,
+
+                dc.discount_pct,
+
+                CASE
+                    WHEN COALESCE(tc.availed, 0) = 1
+                    AND dc.discount_pct IS NOT NULL
+                    THEN ROUND(
+                        SUM(li.line_amount) * (dc.discount_pct / 100.0),
+                        2
+                    )
+                    ELSE 0.00
+                END AS discount_amount
 
             FROM shopzada.fact_line_item li
 
+            -- ORDER DETAILS
             LEFT JOIN staging.orders_clean o
                 ON li.order_id = o.order_id
 
             LEFT JOIN staging.order_delays_clean d
                 ON li.order_id = d.order_id
+
+            -- CAMPAIGN (order-level, at most one per order)
+            LEFT JOIN staging.transactional_campaign_clean tc
+                ON li.order_id = tc.order_id
+
+            LEFT JOIN shopzada.dim_campaign dc
+                ON tc.campaign_id = dc.campaign_id
 
             GROUP BY
                 li.order_id,
@@ -525,7 +561,12 @@ with DAG(
                 li.staff_key,
                 li.date_key,
                 o.estimated_arrival_days,
-                d.delay_in_days;
+                d.delay_in_days,
+                tc.campaign_id,
+                tc.availed,
+                dc.campaign_key,
+                dc.discount_pct;
+
             """
         )
 
