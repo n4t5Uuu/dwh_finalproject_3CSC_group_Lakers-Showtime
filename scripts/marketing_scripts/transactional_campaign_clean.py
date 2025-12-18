@@ -1,8 +1,6 @@
-# ============================================================
+
 # Cleaning Script — Marketing / Transactional Campaign
-# Purpose: Prepare campaign transaction events
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
+
 
 import pandas as pd
 import re
@@ -43,13 +41,11 @@ def split_clean_and_issues(df: pd.DataFrame):
     """
     Required fields:
     - order_id
-    - campaign_id
     - transaction_date
     - availed
     """
     required = [
         "order_id",
-        "campaign_id",
         "transaction_date",
         "date_key",
         "availed",
@@ -90,7 +86,19 @@ def main():
 
     # Normalize IDs
     df["order_id"] = df["order_id"].astype(str).str.strip()
-    df["campaign_id"] = df["campaign_id"].astype(str).str.strip()
+    df["campaign_id"] = (
+        df["campaign_id"]
+        .astype("string")
+        .str.strip()
+        .replace(
+            {
+                "": pd.NA,
+                "nan": pd.NA,
+                "NaN": pd.NA,
+                "None": pd.NA,
+            }
+        )
+    )
 
     # Parse transaction_date
     df["transaction_date"] = pd.to_datetime(

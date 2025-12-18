@@ -56,7 +56,7 @@ with DAG(
             tc.order_id,
             
             CASE
-                WHEN tc.campaign_id IS NULL THEN -1      -- Not Applicable
+                WHEN NULLIF(NULLIF(tc.campaign_id, ''), 'NaN') IS NULL THEN -1 -- Not Applicable
                 ELSE COALESCE(dc.campaign_key, 0)        -- Unknown (late-arriving)
             END AS campaign_key,
 

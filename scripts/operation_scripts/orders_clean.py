@@ -61,7 +61,20 @@ def clean_orders(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalize IDs
     df["order_id"] = df["order_id"].astype(str).str.strip()
-    df["user_id"] = df["user_id"].astype(str).str.strip()
+    df["user_id"] = (
+        df["user_id"]
+        .astype("string")
+        .str.strip()
+        .replace(
+            {
+                "": pd.NA,
+                "nan": pd.NA,
+                "NaN": pd.NA,
+                "None": pd.NA,
+            }
+        )
+    )
+
 
     # Parse transaction_date
     df["transaction_date"] = pd.to_datetime(
@@ -89,7 +102,7 @@ def split_clean_and_issues(df: pd.DataFrame):
     """
     Orders are atomic:
     - order_id must exist
-    - user_id must exist
+    - user_id 
     - transaction_date must be valid
     """
     required = [
@@ -110,8 +123,11 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    issues_df.fillna("").to_csv(
-        OUT_DIR / f"{name}_issues.csv", index=False
+
+    issues_df.to_csv(
+        OUT_DIR / f"{name}_issues.csv",
+        index=False,
+        na_rep=""
     )
 
     print(
@@ -119,12 +135,13 @@ def save_outputs(clean_df, issues_df, name):
     )
 
 
+
 # ============================================================
 # MAIN
 # ============================================================
 
 def main():
-    print("\n=== Cleaning Operations Orders ===\n")
+    print("\nCleaning Operations Orders\n")
 
     orders_raw = load_and_concat(ORDER_FILES)
     orders_clean = clean_orders(orders_raw)
