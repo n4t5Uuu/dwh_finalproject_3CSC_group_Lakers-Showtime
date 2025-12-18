@@ -1,8 +1,5 @@
-# ============================================================
+
 # Cleaning Script — Operations / Orders
-# Purpose: Prepare order-level transactional data
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
 
 import pandas as pd
 import re
@@ -43,7 +40,7 @@ def to_date_key(dt: pd.Series) -> pd.Series:
 def load_and_concat(files):
     if not files:
         raise FileNotFoundError(
-            "❌ No order_data_*.csv files found in Operations Department"
+            "No order_data_*.csv files found in Operations Department"
         )
 
     frames = []
@@ -64,7 +61,20 @@ def clean_orders(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalize IDs
     df["order_id"] = df["order_id"].astype(str).str.strip()
-    df["user_id"] = df["user_id"].astype(str).str.strip()
+    df["user_id"] = (
+        df["user_id"]
+        .astype("string")
+        .str.strip()
+        .replace(
+            {
+                "": pd.NA,
+                "nan": pd.NA,
+                "NaN": pd.NA,
+                "None": pd.NA,
+            }
+        )
+    )
+
 
     # Parse transaction_date
     df["transaction_date"] = pd.to_datetime(
@@ -72,7 +82,7 @@ def clean_orders(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     # Add date_key (allowed in cleaning)
-    df["transaction_date_key"] = to_date_key(df["transaction_date"])
+    df["date_key"] = to_date_key(df["transaction_date"])
 
     # Parse estimated arrival
     df["estimated_arrival_days"] = (
@@ -92,14 +102,14 @@ def split_clean_and_issues(df: pd.DataFrame):
     """
     Orders are atomic:
     - order_id must exist
-    - user_id must exist
+    - user_id 
     - transaction_date must be valid
     """
     required = [
         "order_id",
         "user_id",
         "transaction_date",
-        "transaction_date_key",
+        "date_key",
         "estimated_arrival_days",
     ]
 
@@ -113,10 +123,11 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
 
-    issues_df.fillna("").to_csv(
-        OUT_DIR / f"{name}_issues.csv", index=False
+    issues_df.to_csv(
+        OUT_DIR / f"{name}_issues.csv",
+        index=False,
+        na_rep=""
     )
 
     print(
@@ -124,12 +135,13 @@ def save_outputs(clean_df, issues_df, name):
     )
 
 
+
 # ============================================================
 # MAIN
 # ============================================================
 
 def main():
-    print("\n=== Cleaning Operations Orders ===\n")
+    print("\nCleaning Operations Orders\n")
 
     orders_raw = load_and_concat(ORDER_FILES)
     orders_clean = clean_orders(orders_raw)
@@ -137,7 +149,7 @@ def main():
 
     save_outputs(clean_df, issues_df, "orders_clean")
 
-    print("\nOrders cleaning completed ✓\n")
+    print("\nOrders cleaning completed\n")
 
 
 if __name__ == "__main__":

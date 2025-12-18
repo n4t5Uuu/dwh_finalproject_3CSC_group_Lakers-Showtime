@@ -10,9 +10,7 @@ with DAG(
     tags=["dwh", "fact", "orders"],
 ) as dag:
 
-    # -------------------------------------------------
-    # CREATE FACT TABLE
-    # -------------------------------------------------
+
     create_fact_orders = PostgresOperator(
         task_id="create_fact_orders",
         postgres_conn_id="postgres_default",
@@ -25,8 +23,8 @@ with DAG(
             order_id VARCHAR(100) NOT NULL,
 
             user_key INT NOT NULL,
-            merchant_key INT NOT NULL,
-            staff_key INT NOT NULL,
+            merchant_key INT NOT NULL DEFAULT 0,
+            staff_key INT NOT NULL DEFAULT 0,
             date_key INT NOT NULL,
 
             order_amount NUMERIC(14,2) NOT NULL,
@@ -36,9 +34,7 @@ with DAG(
         """
     )
 
-    # -------------------------------------------------
-    # LOAD FACT TABLE
-    # -------------------------------------------------
+
     load_fact_orders = PostgresOperator(
         task_id="load_fact_orders",
         postgres_conn_id="postgres_default",

@@ -1,26 +1,22 @@
-# ============================================================
-# Cleaning Script — Enterprise / Merchant
-# Purpose: Prepare merchant data for SCD Type 2 dimension
-# Layer: Cleaning (NO surrogate keys, NO SCD logic)
-# ============================================================
+
+# Cleaning Script for Enterprise – Merchant Data
 
 import pandas as pd
 from pathlib import Path
 import re
 
-# ============================================================
-# CONFIG
-# ============================================================
 
+# ================== CONFIG ================== #
 RAW_DIR = Path("/data_files/Enterprise Department")
-OUT_DIR = Path("/clean_data/enterprise")
+
+# Automatically create output directory if it doesn't exist
+BASE_DIR = Path("/clean_data")
+OUT_DIR = BASE_DIR / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MERCHANT_FILE = RAW_DIR / "merchant_data.csv"
 
-# ============================================================
-# HELPERS
-# ============================================================
+# ================== CLEANING ================== #
 
 def to_date_key(dt: pd.Series) -> pd.Series:
     """Convert datetime series to int YYYYMMDD."""
@@ -56,20 +52,13 @@ def clean_merchant_name(name: str) -> str:
 
 
 def split_clean_and_issues(df: pd.DataFrame):
-    """
-    Merchant is SCD Type 2.
-    Duplicates by merchant_id are VALID.
-    Only critical nulls are issues.
-    """
     required_cols = ["merchant_id", "creation_date", "name"]
     issue_mask = df[required_cols].isna().any(axis=1)
-
     return df[~issue_mask].copy(), df[issue_mask].copy()
 
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
     issues_df.fillna("").to_csv(OUT_DIR / f"{name}_issues.csv", index=False)
 
     print(f"[OK] {name}: Clean={len(clean_df):,}, Issues={len(issues_df):,}")
@@ -85,13 +74,6 @@ def load_and_clean_merchant(path: Path) -> pd.DataFrame:
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
 
-    # Normalize business key
-    df["merchant_id"] = (
-        df["merchant_id"]
-        .astype(str)
-        .apply(lambda x: normalize_business_id(x, "MERCHANT"))
-    )
-
     # Clean merchant name
     df["name"] = df["name"].apply(clean_merchant_name)
 
@@ -99,11 +81,11 @@ def load_and_clean_merchant(path: Path) -> pd.DataFrame:
     if "contact_number" in df.columns:
         df["contact_number"] = df["contact_number"].apply(normalize_phone)
 
-    # Parse creation date (SCD anchor)
+    # Parse creation date 
     df["creation_date"] = pd.to_datetime(df["creation_date"], errors="coerce")
     df["merchant_creation_date_key"] = to_date_key(df["creation_date"])
 
-    # Country normalization (same rationale as staff)
+    # Country normalization 
     df["country"] = "United States"
 
     # Sort for downstream SCD logic
@@ -111,19 +93,13 @@ def load_and_clean_merchant(path: Path) -> pd.DataFrame:
 
     return df
 
-# ============================================================
-# MAIN
-# ============================================================
-
 def main():
-    print("\n=== Cleaning Enterprise Merchant Data (SCD-Ready) ===\n")
+
 
     merchant_df = load_and_clean_merchant(MERCHANT_FILE)
     merchant_clean, merchant_issues = split_clean_and_issues(merchant_df)
-
     save_outputs(merchant_clean, merchant_issues, "merchant_data")
-
-    print("Merchant cleaning completed ✓")
+    print("Merchant cleaning completed")
 
 
 if __name__ == "__main__":

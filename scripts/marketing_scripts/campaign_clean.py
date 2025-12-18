@@ -1,16 +1,10 @@
-# ============================================================
-# Cleaning Script — Marketing / Campaign
-# Purpose: Prepare campaign data for Type 1 dimension
-# Layer: Cleaning (NO surrogate keys, NO SCD logic)
-# ============================================================
+# Cleaning Script for Marketing – Campaign Data
 
 import re
 from pathlib import Path
 import pandas as pd
 
-# ============================================================
-# CONFIG
-# ============================================================
+# ================== CONFIG ================== #
 
 RAW_DIR = Path("/data_files/Marketing Department")
 OUT_DIR = Path("/clean_data/marketing")
@@ -18,9 +12,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 CAMPAIGN_FILE = RAW_DIR / "campaign_data.csv"
 
-# ============================================================
-# HELPERS
-# ============================================================
+# ================== CLEANING ================== #
 
 def normalize_discount(val):
     """
@@ -48,39 +40,48 @@ def clean_description(desc):
 # ============================================================
 
 def load_and_clean_campaign(path: Path) -> pd.DataFrame:
-    df_raw = pd.read_csv(path, header=None)
+    # Read raw lines
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
 
-    # Handle malformed tab-separated rows
-    if df_raw.shape[1] == 1:
-        df_raw = df_raw[0].astype(str).str.split("\t", expand=True)
+    rows = []
+    for line in lines[1:]:  # skip header
+        line = line.strip().strip('"')
+        parts = line.split("\t")
 
-    df = pd.DataFrame({
-        "campaign_id": df_raw[1].astype(str),
-        "campaign_name": df_raw[2].astype(str).str.strip(),
-        "campaign_description": df_raw[3].astype(str).apply(clean_description),
-        "discount_pct": df_raw[4].astype(str).apply(normalize_discount),
-    })
+        # Expected: index + 4 columns
+        if len(parts) < 5:
+            continue
 
-    # Keep valid campaign rows only
-    df = df[df["campaign_id"].str.contains("CAMPAIGN", na=False)]
+        _, campaign_id, campaign_name, campaign_description, discount = parts[:5]
 
-    # Discount as nullable integer
+        rows.append({
+            "campaign_id": campaign_id.strip(),
+            "campaign_name": campaign_name.strip(),
+            "campaign_description": clean_description(campaign_description),
+            "discount_pct": normalize_discount(discount),
+        })
+
+    df = pd.DataFrame(rows)
+
+    # Nullable integer
     df["discount_pct"] = df["discount_pct"].astype("Int64")
 
-    # Type 1 rule: keep latest occurrence
+    # Type-1 dimension rule
     df = df.drop_duplicates(subset=["campaign_id"], keep="last")
 
     return df.reset_index(drop=True)
 
-# ============================================================
+
+
+
 # SPLIT CLEAN / ISSUES
-# ============================================================
 
 def split_clean_and_issues(df: pd.DataFrame):
     """
     Issues = missing required dimension attributes
     """
-    required_cols = ["campaign_id", "campaign_name", "discount_pct"]
+    required_cols = ["campaign_id", "campaign_name"]
     issue_mask = df[required_cols].isna().any(axis=1)
 
     return df[~issue_mask].copy(), df[issue_mask].copy()
@@ -91,17 +92,14 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
     issues_df.fillna("").to_csv(OUT_DIR / f"{name}_issues.csv", index=False)
 
     print(f"[OK] {name}: Clean={len(clean_df):,}, Issues={len(issues_df):,}")
 
-# ============================================================
-# MAIN
-# ============================================================
 
+# MAIN
 def main():
-    print("\n=== Cleaning Marketing Campaign Data (Type 1) ===\n")
+    print("\nCleaning Marketing Campaign Data \n")
 
     campaign_df = load_and_clean_campaign(CAMPAIGN_FILE)
     campaign_clean, campaign_issues = split_clean_and_issues(campaign_df)

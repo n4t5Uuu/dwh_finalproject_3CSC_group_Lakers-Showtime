@@ -1,0 +1,10 @@
+pandas
+numpy
+pyarrow
+fastparquet
+polars
+python-dateutil
+psycopg2-binary
+requests
+openpyxl
+lxml

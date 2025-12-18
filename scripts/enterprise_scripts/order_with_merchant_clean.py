@@ -1,32 +1,28 @@
-# ============================================================
-# Cleaning Script — Enterprise / Order with Merchant & Staff
-# Purpose: Prepare order → merchant → staff relationships
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
+# Cleaning Script for Enterprise – Order–Merchant–Staff 
 
 import pandas as pd
 from pathlib import Path
 
-# ============================================================
-# CONFIG
-# ============================================================
+# ================== CONFIG ================== #
 
 RAW_DIR = Path("/data_files/Enterprise Department")
-OUT_DIR = Path("/clean_data/enterprise")
+# Automatically create output directory if it doesn't exist
+BASE_DIR = Path("/clean_data")
+BASE_DIR.mkdir(parents=True, exist_ok=True)
+OUT_DIR = BASE_DIR / "enterprise"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 ORDER_MERCHANT_FILES = sorted(
     RAW_DIR.glob("order_with_merchant_data*.csv")
+
 )
 
-# ============================================================
-# HELPERS
-# ============================================================
+# ================== CLEANING ================== #
 
 def load_and_concat(files):
     if not files:
         raise FileNotFoundError(
-            "❌ No order_with_merchant_data*.csv files found"
+            "No order_with_merchant_data*.csv files found"
         )
 
     frames = []
@@ -60,7 +56,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
 
     issues_df.fillna("").to_csv(
         OUT_DIR / f"{name}_issues.csv", index=False

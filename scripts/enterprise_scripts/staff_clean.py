@@ -1,16 +1,10 @@
-# ============================================================
-# Cleaning Script — Enterprise / Staff
-# Purpose: Prepare staff data for SCD Type 2 dimension
-# Layer: Cleaning (NO surrogate keys, NO SCD logic)
-# ============================================================
+# Cleaning Script for Enterprise – Staff Data
 
 import pandas as pd
 from pathlib import Path
 import re
 
-# ============================================================
-# CONFIG
-# ============================================================
+# ================== CONFIG ================== #
 
 RAW_DIR = Path("/data_files/Enterprise Department")
 OUT_DIR = Path("/clean_data/enterprise")
@@ -18,9 +12,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 STAFF_FILE = RAW_DIR / "staff_data.csv"
 
-# ============================================================
-# HELPERS
-# ============================================================
+# ================== CLEANING ================== #
 
 def to_date_key(dt: pd.Series) -> pd.Series:
     """Convert datetime series to int YYYYMMDD."""
@@ -61,7 +53,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
     issues_df.fillna("").to_csv(OUT_DIR / f"{name}_issues.csv", index=False)
 
     print(f"[OK] {name}: Clean={len(clean_df):,}, Issues={len(issues_df):,}")

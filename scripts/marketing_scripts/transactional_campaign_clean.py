@@ -1,8 +1,6 @@
-# ============================================================
+
 # Cleaning Script — Marketing / Transactional Campaign
-# Purpose: Prepare campaign transaction events
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
+
 
 import pandas as pd
 import re
@@ -43,15 +41,13 @@ def split_clean_and_issues(df: pd.DataFrame):
     """
     Required fields:
     - order_id
-    - campaign_id
     - transaction_date
     - availed
     """
     required = [
         "order_id",
-        "campaign_id",
         "transaction_date",
-        "transaction_date_key",
+        "date_key",
         "availed",
     ]
 
@@ -65,7 +61,6 @@ def split_clean_and_issues(df: pd.DataFrame):
 
 def save_outputs(clean_df, issues_df, name):
     clean_df.to_csv(OUT_DIR / f"{name}.csv", index=False)
-    clean_df.to_parquet(OUT_DIR / f"{name}.parquet", index=False)
 
     issues_df.fillna("").to_csv(
         OUT_DIR / f"{name}_issues.csv", index=False
@@ -91,14 +86,26 @@ def main():
 
     # Normalize IDs
     df["order_id"] = df["order_id"].astype(str).str.strip()
-    df["campaign_id"] = df["campaign_id"].astype(str).str.strip()
+    df["campaign_id"] = (
+        df["campaign_id"]
+        .astype("string")
+        .str.strip()
+        .replace(
+            {
+                "": pd.NA,
+                "nan": pd.NA,
+                "NaN": pd.NA,
+                "None": pd.NA,
+            }
+        )
+    )
 
     # Parse transaction_date
     df["transaction_date"] = pd.to_datetime(
         df["transaction_date"], errors="coerce"
     )
 
-    df["transaction_date_key"] = to_date_key(df["transaction_date"])
+    df["date_key"] = to_date_key(df["transaction_date"])
 
     # Parse estimated arrival
     df["estimated_arrival_days"] = (
@@ -120,7 +127,7 @@ def main():
 
     save_outputs(clean_df, issues_df, "transactional_campaign_clean")
 
-    print("\nTransactional campaign cleaning completed ✓\n")
+    print("\nTransactional campaign cleaning completed \n")
 
 
 if __name__ == "__main__":
