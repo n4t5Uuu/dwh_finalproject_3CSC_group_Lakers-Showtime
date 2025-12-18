@@ -10,6 +10,7 @@ Make sure the following are installed on your system:
 - Docker Desktop
 - Git
 - Any web browser to access Airflow and PostgreSQL.
+- Power BI
 
 
 ---
@@ -19,7 +20,7 @@ Make sure the following are installed on your system:
 ### 1. Clone the Repository
 
 ```bash
-git  clone <repository-url>
+git  clone https://github.com/n4t5Uuu/dwh_finalproject_3CSC_group_Lakers-Showtime.git
 cd <project-root>
 ```
 
@@ -70,3 +71,7 @@ Connection Tab:
 - Password 				= airflow
 ```
 Once done, you can check the dimensions and fact tables under the "shopzada" schema. The staging tables are located under the "staging" schema.
+
+### 4. View Dashboard via Power BI
+
+Navigate to **"dashboard"** folder and open the **"Analytics"** file. This will open Power BI, showing the Executive Dashboard, Campaign, Orders, Merchant and Staff, and Users.
