@@ -1,8 +1,5 @@
-# ============================================================
+
 # Cleaning Script — Operations / Orders
-# Purpose: Prepare order-level transactional data
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
 
 import pandas as pd
 import re
@@ -135,7 +132,7 @@ def main():
 
     save_outputs(clean_df, issues_df, "orders_clean")
 
-    print("\nOrders cleaning completed ✓\n")
+    print("\nOrders cleaning completed\n")
 
 
 if __name__ == "__main__":

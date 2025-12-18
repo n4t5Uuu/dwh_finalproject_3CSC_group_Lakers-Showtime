@@ -25,3 +25,19 @@ SELECT
     p.product_type,
     p.price
 FROM staging.product_list p;
+
+INSERT INTO shopzada.dim_product (
+    product_id,
+    product_name,
+    product_type,
+    price
+)
+SELECT DISTINCT
+    f.product_id,
+    COALESCE(f.product_name, 'UNKNOWN'),
+    'UNKNOWN',
+    0.00
+FROM staging.fact_line_item_src f
+LEFT JOIN shopzada.dim_product dp
+    ON f.product_id = dp.product_id
+WHERE dp.product_id IS NULL;

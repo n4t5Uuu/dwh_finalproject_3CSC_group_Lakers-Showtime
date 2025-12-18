@@ -1,8 +1,5 @@
-# ============================================================
+
 # Cleaning Script — Operations / Line Item Prices
-# Purpose: Prepare price + quantity measures for line items
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
 
 import pandas as pd
 import re

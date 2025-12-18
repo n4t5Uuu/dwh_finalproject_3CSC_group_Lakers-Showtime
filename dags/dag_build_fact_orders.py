@@ -23,8 +23,8 @@ with DAG(
             order_id VARCHAR(100) NOT NULL,
 
             user_key INT NOT NULL,
-            merchant_key INT NOT NULL,
-            staff_key INT NOT NULL,
+            merchant_key INT NOT NULL DEFAULT 0,
+            staff_key INT NOT NULL DEFAULT 0,
             date_key INT NOT NULL,
 
             order_amount NUMERIC(14,2) NOT NULL,

@@ -1,8 +1,6 @@
-# ============================================================
+
 # Cleaning Script — Operations / Line Item Products
-# Purpose: Prepare product references for line-item fact source
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
+
 
 import pandas as pd
 from pathlib import Path

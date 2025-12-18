@@ -86,6 +86,26 @@ SELECT
 FROM ordered_users;
 
 -- =====================================================
+-- LATE-ARRIVING USERS (FROM ORDERS)
+-- =====================================================
+INSERT INTO shopzada.dim_user (
+    user_id,
+    effective_from,
+    effective_to,
+    is_current
+)
+SELECT DISTINCT
+    o.user_id,
+    DATE '1960-01-01',
+    CAST(NULL AS DATE),
+    TRUE
+FROM staging.orders_clean o
+LEFT JOIN shopzada.dim_user du
+    ON o.user_id = du.user_id
+WHERE du.user_id IS NULL;
+
+
+-- =====================================================
 -- UNKNOWN USER (SURROGATE KEY = 0)
 -- =====================================================
 INSERT INTO shopzada.dim_user (

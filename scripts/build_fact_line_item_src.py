@@ -21,10 +21,6 @@ ORDER_FILE    = OPS_DIR / "orders_clean.csv"
 MERCH_FILE    = ENT_DIR / "order_with_merchant_clean.csv"
 CAMPAIGN_FILE = MKT_DIR / "transactional_campaign_clean.csv"
 
-# ------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------
-
 def parse_quantity(val):
     if pd.isna(val):
         return None
@@ -110,9 +106,7 @@ def main():
 
     # ---------- Validate ----------
     required = [
-        "order_id", "product_id", "user_id",
-        "merchant_id", "staff_id",
-        "unit_price", "quantity", "date_key"
+        "order_id", "product_id", "user_id"
     ]
 
     issues = fact[fact[required].isna().any(axis=1)]

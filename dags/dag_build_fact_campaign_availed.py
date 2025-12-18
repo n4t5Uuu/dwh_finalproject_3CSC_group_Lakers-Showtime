@@ -54,7 +54,12 @@ with DAG(
         )
         SELECT
             tc.order_id,
-            dc.campaign_key,
+            
+            CASE
+                WHEN tc.campaign_id IS NULL THEN -1      -- Not Applicable
+                ELSE COALESCE(dc.campaign_key, 0)        -- Unknown (late-arriving)
+            END AS campaign_key,
+
             COALESCE(du.user_key, 0)      AS user_key,
             COALESCE(dm.merchant_key, 0)  AS merchant_key,
             COALESCE(ds.staff_key, 0)     AS staff_key,

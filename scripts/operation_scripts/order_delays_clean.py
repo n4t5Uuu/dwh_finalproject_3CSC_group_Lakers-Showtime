@@ -1,8 +1,5 @@
-# ============================================================
+
 # Cleaning Script — Operations / Order Delays
-# Purpose: Prepare optional delay measure for orders
-# Layer: Cleaning (NO joins, NO surrogate keys)
-# ============================================================
 
 import pandas as pd
 from pathlib import Path
