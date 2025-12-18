@@ -6,3 +6,5 @@ polars
 python-dateutil
 psycopg2-binary
 requests
+openpyxl
+lxml

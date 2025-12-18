@@ -7,6 +7,7 @@ sys.path.append("/scripts")
 
 # DIRECTORY SETUP
 from setup_directories import main as setup_directories
+from convert_all_to_csv import main as convert_to_csv
 
 # BUSINESS
 from business_scripts.business_clean import main as clean_business
@@ -38,10 +39,10 @@ with DAG(
     tags=["dwh", "cleaning", "kimball"],
 ) as dag:
 
-    # setup_directories_task = PythonOperator(
-    #     task_id="setup_directories",
-    #     python_callable=setup_directories,
-    # )
+    convert_to_csv = PythonOperator(
+        task_id="convert_to_csv",
+        python_callable=convert_to_csv,
+    )
 
     # BUSINESS CLEANING
     clean_business_task = PythonOperator(
@@ -107,9 +108,10 @@ with DAG(
 
     # TASK DEPENDENCIES
     # setup_directories >> clean_business_task
-    clean_business_task >>  clean_customer_task
-    
-    clean_customer_task >> [
+    convert_to_csv >> [
+        clean_business_task,
+        clean_staff_task,
+        clean_customer_task,
         clean_orders_task,
         clean_line_item_products_task,
         clean_line_item_prices_task,
