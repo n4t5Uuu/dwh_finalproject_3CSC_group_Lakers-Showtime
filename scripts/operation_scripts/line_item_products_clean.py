@@ -22,7 +22,7 @@ PRODUCT_FILES = sorted(RAW_DIR.glob("line_item_data_products*.csv"))
 def load_and_concat(files):
     if not files:
         raise FileNotFoundError(
-            "❌ No line_item_data_products*.csv files found"
+            "No line_item_data_products*.csv files found"
         )
 
     frames = []

@@ -34,7 +34,7 @@ def parse_quantity(val):
 def load_and_concat(files):
     if not files:
         raise FileNotFoundError(
-            "❌ No line_item_data_prices*.csv files found"
+            "No line_item_data_prices*.csv files found"
         )
 
     frames = []
