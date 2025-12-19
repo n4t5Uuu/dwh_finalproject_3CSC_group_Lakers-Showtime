@@ -1,4 +1,4 @@
-Unnamed: 0,order_id,user_id,estimated arrival,transaction_date
+,order_id,user_id,estimated arrival,transaction_date
 4,b4c411de-2fd3-4806-91ae-165edc9baa12,USER28531,13days,2021-10-12
 7,d42d7e7a-71bd-43aa-8bed-49d52b74d4eb,USER56935,13days,2021-10-15
 41,84295de8-90c2-4e67-a1d9-b1ffab45623f,USER11824,13days,2021-10-11

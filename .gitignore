@@ -1,1 +1,18 @@
-aa
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Airflow-specific logs and caches
+opt/airflow/logs/
+logs/
+
+#parquet files and cleaned csvs because too large
+*.parquet
+clean_data/dimensions/**.csv
+clean_data/facts/**.csv
+clean_data/business/**.csv
+clean_data/customer_management/**.csv
+clean_data/enterprise/*
+clean_data/marketing/**.csv
+clean_data/operations/**.csv

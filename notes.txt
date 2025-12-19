@@ -1,0 +1,61 @@
+Rebuild " docker-compose down "
+Restart " docker-compose down -v "
+Run " docker-compose up -d "
+
+try login sa airflow:
+username: admin, 
+password: admin 
+
+if not work:
+    docker-compose exec airflow-webserver airflow users create --username admin --firstname Air --lastname Flow --role Admin --email admin@example.com --password admin
+
+Sa airflow, go to connections, navigate to postgres-default , then set
+Host: postgres
+Database: airflow
+Login: airflow
+Password: airflow
+Port: 5432
+
+Then save changes
+
+ONLY USE DWH TAGS (OLD)
+Order of execution:
+1. dwh_raw_cleaning_pipeline
+2. dwh_staff_pipeline ; dwh_merchant_pipeline ; dwh_user_pipeline ; dwh_product_pipeline ; dwh_campaign_pipeline ; dwh_dim_date_pipeline
+3. dwh_ddl_pipeline
+4. dwh_fact_pipeline
+
+How to execute airflow Dags (UPDATED)
+1. Turn on ONLY all scripts (switch on lng do not run)
+2. Run master_shopzada_pipeline ONLY
+3. It should load successfully
+
+NOTE: IGNORE dwh_master_pipeline
+
+To access pgadmin
+email: admin@admin.com
+password: admin
+
+Register server (Right click Servers)
+general tab - name: shopzada
+connection tab - host name / address: postgres
+connection tab - Port : 5432
+connection tab - Maintenance database : airflow
+connection tab - Username: airflow
+connection tab - Password: airflow
+
+Power BI set up and execution:
+
+1. Download based from this link: https://www.microsoft.com/en-us/download/details.aspx?id=58494&fbclid=IwY2xjawOuZa1leHRuA2FlbQIxMABicmlkETFDWHlNTHNKNGJhNTJZMk1wc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHrF2xx0zANh_-ySUr9k762O2iduZTXDSyGzjogy8YFKP-MuI14hcMmebq6VF_aem_KmTAqMnY81veyd5MToUUaA
+2. Open power BI
+3. Import via postgres
+
+Server: Localhost
+Database: airflow
+
+Username: airflow
+Password: airflow
+
+4. If encounter issues in loading data, open windows, then services, then navigate to postgres
+and stop the service.
+5. It should now work and you can play around with our kimball data warehouse.
